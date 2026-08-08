@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>106万円の壁 撤廃チェッカー｜2026年10月から社会保険に入る?</title>
+<meta name="description" content="2026年10月の制度改正で「106万円の壁」が撤廃されます。あなたが新たに社会保険(厚生年金・健康保険)の加入対象になるかを、週の労働時間と勤務先の規模から判定します。">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="106万円の壁 撤廃チェッカー｜2026年10月から社会保険に入る?">
+<meta property="og:description" content="2026年10月から「106万円の壁」が撤廃。あなたが新たに社会保険の加入対象になるか判定します。">
+<meta property="og:locale" content="ja_JP">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --fg: #18181b;
+    --muted: #71717a;
+    --card: #ffffff;
+    --accent: #2563eb;
+    --accent-ink: #ffffff;
+    --warn: #dc2626;
+    --ok: #059669;
+    --soft: #f4f4f5;
+    --border: #e4e4e7;
+    --shadow: 0 1px 2px rgba(24,24,27,.04), 0 8px 24px rgba(24,24,27,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0c0c0d;
+      --fg: #f4f4f5;
+      --muted: #a1a1aa;
+      --card: #18181b;
+      --accent: #60a5fa;
+      --accent-ink: #0c0c0d;
+      --warn: #f87171;
+      --ok: #34d399;
+      --soft: #26262a;
+      --border: #2a2a2e;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    display: flex;
+    justify-content: center;
+    padding: 32px 16px 80px;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.7;
+  }
+  .wrap { width: 100%; max-width: 560px; }
+  h1 {
+    font-size: 1.5rem;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    margin: 0 0 8px;
+    line-height: 1.4;
+  }
+  .lead {
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin-bottom: 24px;
+  }
+  .notice {
+    background: var(--soft);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    padding: 12px 14px;
+    font-size: 0.85rem;
+    margin-bottom: 24px;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 18px;
+  }
+  .field { margin-bottom: 20px; }
+  .field:last-child { margin-bottom: 0; }
+  label {
+    display: block;
+    font-size: 0.88rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .hint {
+    font-size: 0.76rem;
+    color: var(--muted);
+    font-weight: 400;
+    margin-top: 4px;
+  }
+  input[type="number"], select {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--fg);
+    font-size: 1rem;
+    font-family: inherit;
+  }
+  .choices { display: flex; gap: 8px; }
+  .choices button {
+    flex: 1;
+    padding: 12px 8px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--fg);
+    font-size: 0.88rem;
+    font-family: inherit;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .choices button.on {
+    background: var(--accent);
+    color: var(--accent-ink);
+    border-color: var(--accent);
+  }
+  #result { display: none; }
+  #result.show { display: block; }
+  .verdict {
+    font-size: 1.25rem;
+    font-weight: 900;
+    margin-bottom: 6px;
+    line-height: 1.45;
+  }
+  .verdict.join { color: var(--warn); }
+  .verdict.stay { color: var(--ok); }
+  .change-badge {
+    display: inline-block;
+    background: var(--warn);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 999px;
+    margin-bottom: 10px;
+  }
+  .compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 16px 0;
+  }
+  .compare div {
+    background: var(--soft);
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 0.82rem;
+  }
+  .compare .head {
+    color: var(--muted);
+    font-size: 0.72rem;
+    margin-bottom: 4px;
+  }
+  .compare .val { font-weight: 900; font-size: 0.95rem; }
+  .reason {
+    font-size: 0.85rem;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+    padding-top: 14px;
+    margin-top: 14px;
+  }
+  .reason li { margin-bottom: 4px; }
+  .money {
+    background: var(--soft);
+    border-radius: 10px;
+    padding: 14px;
+    margin-top: 14px;
+    font-size: 0.85rem;
+  }
+  .money .big { font-size: 1.2rem; font-weight: 900; color: var(--warn); }
+  h2 {
+    font-size: 1.05rem;
+    font-weight: 900;
+    margin: 32px 0 12px;
+  }
+  .faq { font-size: 0.88rem; }
+  .faq dt { font-weight: 700; margin-top: 16px; }
+  .faq dd { margin: 6px 0 0; color: var(--muted); }
+  .disclaimer {
+    font-size: 0.78rem;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    margin-top: 28px;
+  }
+  footer {
+    margin-top: 30px;
+    font-size: 0.72rem;
+    color: var(--muted);
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>106万円の壁 撤廃チェッカー<br>2026年10月から社会保険に入る?</h1>
+  <p class="lead">2026年10月の制度改正で、社会保険の加入条件から「月額8.8万円(年収106万円)以上」という賃金要件が撤廃されます。全国で約200万人が新たに加入対象になる見込みです。</p>
+
+  <div class="notice">
+    <b>いま何が変わるのか</b><br>
+    これまでは「週20時間以上」かつ「月8.8万円以上」の両方を満たす人が対象でした。2026年10月以降は<b>収入がいくらでも、週20時間以上働いていれば対象</b>になります。
+  </div>
+
+  <div class="card">
+    <div class="field">
+      <label for="hours">週の所定労働時間</label>
+      <input type="number" id="hours" placeholder="例: 22" min="0" max="80" step="0.5">
+      <div class="hint">契約上の時間です。残業は含めません。</div>
+    </div>
+
+    <div class="field">
+      <label>勤務先の従業員数</label>
+      <div class="choices" id="sizeChoices">
+        <button data-v="large" type="button">51人以上</button>
+        <button data-v="small" type="button">50人以下</button>
+        <button data-v="unknown" type="button">わからない</button>
+      </div>
+      <div class="hint">厚生年金の被保険者数が基準です。パート・アルバイトを含む全体の人数とは異なる場合があります。</div>
+    </div>
+
+    <div class="field">
+      <label>雇用期間の見込み</label>
+      <div class="choices" id="termChoices">
+        <button data-v="long" type="button">2か月を超える</button>
+        <button data-v="short" type="button">2か月以内</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>学生ですか</label>
+      <div class="choices" id="studentChoices">
+        <button data-v="no" type="button">いいえ</button>
+        <button data-v="yes" type="button">はい</button>
+      </div>
+      <div class="hint">夜間・通信・定時制の学生は「いいえ」を選んでください(加入対象になり得ます)。</div>
+    </div>
+
+    <div class="field">
+      <label for="income">月収(手取り試算用・任意)</label>
+      <input type="number" id="income" placeholder="例: 90000" min="0" step="1000">
+      <div class="hint">入力すると、保険料の目安を概算します。</div>
+    </div>
+  </div>
+
+  <div class="card" id="result">
+    <div id="badge"></div>
+    <div class="verdict" id="verdict"></div>
+    <div class="compare">
+      <div>
+        <div class="head">2026年9月まで(現行)</div>
+        <div class="val" id="nowVal">-</div>
+      </div>
+      <div>
+        <div class="head">2026年10月以降</div>
+        <div class="val" id="futureVal">-</div>
+      </div>
+    </div>
+    <div id="moneyBox"></div>
+    <div class="reason">
+      <b>判定の内訳</b>
+      <ul id="reasonList"></ul>
+    </div>
+  </div>
+
+  <h2>よくある質問</h2>
+  <dl class="faq">
+    <dt>130万円の壁はどうなりますか?</dt>
+    <dd>106万円の壁とは別の制度で、こちらは残ります。130万円の壁は「家族の扶養に入れるかどうか」の基準です。なお2026年4月からは、一時的な収入増だけでは扶養を外れないよう、労働契約の内容をもとに判定する運用に変わっています。</dd>
+
+    <dt>勤務先が50人以下ならずっと対象外ですか?</dt>
+    <dd>いいえ。企業規模の要件は段階的に引き下げられる予定で、2035年10月には企業規模を問わず適用される見込みです。</dd>
+
+    <dt>週30時間以上働いている場合は?</dt>
+    <dd>正社員の所定労働時間の4分の3以上(おおむね週30時間以上)働いている場合は、勤務先の規模に関係なく以前から加入対象です。今回の改正を待つまでもありません。</dd>
+
+    <dt>加入すると損ですか?</dt>
+    <dd>手取りは減りますが、将来の厚生年金が増え、傷病手当金や出産手当金の対象にもなります。目先の手取りだけで判断する話ではありません。</dd>
+  </dl>
+
+  <div class="disclaimer">
+    <b>ご注意</b><br>
+    このページは公表されている制度改正の内容にもとづく<b>簡易的な目安</b>です。実際の加入可否は、勤務先の適用状況や個別の契約内容によって変わります。保険料の試算も概算で、健康保険料率は加入する健保組合や都道府県によって異なります。<b>最終的な判断は勤務先の担当者、年金事務所、社会保険労務士にご確認ください。</b>
+  </div>
+
+  <footer>制度内容は2026年8月時点の公表情報にもとづきます。</footer>
+</div>
+
+<script>
+const state = { size: null, term: null, student: null };
+
+function wireChoices(id, key) {
+  const box = document.getElementById(id);
+  box.querySelectorAll("button").forEach(btn => {
+    btn.onclick = () => {
+      box.querySelectorAll("button").forEach(b => b.classList.remove("on"));
+      btn.classList.add("on");
+      state[key] = btn.dataset.v;
+      update();
+    };
+  });
+}
+wireChoices("sizeChoices", "size");
+wireChoices("termChoices", "term");
+wireChoices("studentChoices", "student");
+document.getElementById("hours").addEventListener("input", update);
+document.getElementById("income").addEventListener("input", update);
+
+// 本人負担分のおおよその料率。
+// 厚生年金 18.3% の半分 = 9.15%、健康保険は概ね10%前後の半分 = 約5%。
+const PREMIUM_RATE = 0.145;
+
+function judge(hours) {
+  // 週30時間以上(正社員の3/4以上)は企業規模を問わず従来から加入対象。
+  const fullTimeEquivalent = hours >= 30;
+  const shortTimeBase =
+    hours >= 20 &&
+    state.term === "long" &&
+    state.student === "no" &&
+    state.size === "large";
+
+  return {
+    fullTimeEquivalent,
+    // 現行は短時間労働者に賃金要件(月8.8万円以上)がかかる
+    nowCovered: fullTimeEquivalent || (shortTimeBase && monthlyIncome() >= 88000),
+    // 2026年10月以降は賃金要件が撤廃される
+    futureCovered: fullTimeEquivalent || shortTimeBase,
+    shortTimeBase,
+  };
+}
+
+function monthlyIncome() {
+  const v = parseFloat(document.getElementById("income").value);
+  return isNaN(v) ? 0 : v;
+}
+
+function update() {
+  const hours = parseFloat(document.getElementById("hours").value);
+  const ready = !isNaN(hours) && state.size && state.term && state.student;
+  const box = document.getElementById("result");
+  if (!ready) { box.classList.remove("show"); return; }
+  box.classList.add("show");
+
+  if (state.size === "unknown") {
+    document.getElementById("badge").innerHTML = "";
+    document.getElementById("verdict").className = "verdict";
+    document.getElementById("verdict").textContent = "勤務先の規模を確認してください";
+    document.getElementById("nowVal").textContent = "判定不可";
+    document.getElementById("futureVal").textContent = "判定不可";
+    document.getElementById("moneyBox").innerHTML = "";
+    document.getElementById("reasonList").innerHTML =
+      "<li>週20時間以上30時間未満の場合、勤務先の厚生年金被保険者数が51人以上かどうかで結論が変わります。</li>" +
+      "<li>勤務先の総務・人事に確認するのが確実です。</li>";
+    return;
+  }
+
+  const r = judge(hours);
+  const newlyCovered = !r.nowCovered && r.futureCovered;
+
+  document.getElementById("badge").innerHTML =
+    newlyCovered ? '<span class="change-badge">10月から変わります</span>' : "";
+
+  const v = document.getElementById("verdict");
+  if (r.futureCovered) {
+    v.className = "verdict join";
+    v.textContent = newlyCovered
+      ? "2026年10月から、新たに社会保険の加入対象になります"
+      : "社会保険の加入対象です";
+  } else {
+    v.className = "verdict stay";
+    v.textContent = "2026年10月以降も、加入対象にはなりません";
+  }
+
+  document.getElementById("nowVal").textContent = r.nowCovered ? "加入対象" : "対象外";
+  document.getElementById("futureVal").textContent = r.futureCovered ? "加入対象" : "対象外";
+
+  const income = monthlyIncome();
+  const moneyBox = document.getElementById("moneyBox");
+  if (r.futureCovered && income > 0) {
+    const premium = Math.round(income * PREMIUM_RATE / 100) * 100;
+    moneyBox.innerHTML =
+      '<div class="money">保険料の本人負担はおおよそ<br>' +
+      '<span class="big">月 ' + premium.toLocaleString() + '円</span> ' +
+      '(手取り約 ' + (income - premium).toLocaleString() + '円)<br>' +
+      '<span style="font-size:.78rem;color:var(--muted)">厚生年金と健康保険の合計の概算です。実際の料率は加入先や地域で異なります。</span></div>';
+  } else {
+    moneyBox.innerHTML = "";
+  }
+
+  const reasons = [];
+  reasons.push(`週の所定労働時間: ${hours}時間 ${hours >= 20 ? "(20時間以上を満たす)" : "(20時間未満のため対象外)"}`);
+  if (r.fullTimeEquivalent) {
+    reasons.push("週30時間以上のため、勤務先の規模にかかわらず以前から加入対象です");
+  } else if (hours >= 20) {
+    reasons.push(`勤務先の従業員数: ${state.size === "large" ? "51人以上(要件を満たす)" : "50人以下(現時点では対象外)"}`);
+    reasons.push(`雇用期間: ${state.term === "long" ? "2か月超の見込み(要件を満たす)" : "2か月以内(対象外)"}`);
+    reasons.push(`学生: ${state.student === "no" ? "該当しない(要件を満たす)" : "該当する(適用除外)"}`);
+    if (r.shortTimeBase) {
+      reasons.push("<b>2026年10月以降は月8.8万円以上という賃金要件がなくなるため、収入額は問われません。</b>");
+    }
+  }
+  document.getElementById("reasonList").innerHTML = reasons.map(x => "<li>" + x + "</li>").join("");
+}
+</script>
+</body>
+</html>
