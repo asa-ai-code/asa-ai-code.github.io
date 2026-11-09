@@ -1,0 +1,949 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#22684A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="レーキ台帳">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<style>img{max-width:100%}[hidden]{display:none!important}</style>
+<title>バドゥーギ卓 レーキ台帳</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#F4F6F3; --surface:#FFFFFF; --surface2:#EBEFEA; --ink:#182019; --muted:#66736B;
+  --line:#D5DDD7; --line2:#E6ECE7; --accent:#22684A; --accent-ink:#FFFFFF; --accent-soft:#DCEBE2;
+  --take:#A8690F; --take-soft:#F6E9D2; --danger:#B03A2E; --focus:#3C8F68;
+  --shadow:0 1px 2px rgba(24,32,25,.06),0 6px 20px rgba(24,32,25,.06);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121917; --surface:#1A2320; --surface2:#222D28; --ink:#E4EBE6; --muted:#93A399;
+    --line:#2C3A32; --line2:#243029; --accent:#5DBE8E; --accent-ink:#0F1A14; --accent-soft:#1F3A2D;
+    --take:#E3A94F; --take-soft:#3A2D18; --danger:#E0705F; --focus:#7DD3A8;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121917; --surface:#1A2320; --surface2:#222D28; --ink:#E4EBE6; --muted:#93A399;
+  --line:#2C3A32; --line2:#243029; --accent:#5DBE8E; --accent-ink:#0F1A14; --accent-soft:#1F3A2D;
+  --take:#E3A94F; --take-soft:#3A2D18; --danger:#E0705F; --focus:#7DD3A8;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic UI","Meiryo",system-ui,sans-serif;
+  font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased;
+}
+.num,.mono{font-family:"IBM Plex Mono","Consolas","Menlo",monospace;font-variant-numeric:tabular-nums}
+.wrap{max-width:1120px;margin:0 auto;padding:28px 20px 80px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px 24px;margin-bottom:22px}
+h1{font-size:22px;font-weight:700;letter-spacing:.01em;margin:0;line-height:1.2;text-wrap:balance}
+.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;font-weight:500}
+.controls{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+select,input[type=date],input[type=time],input[type=number],input[type=text]{
+  font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);
+  border-radius:6px;padding:7px 10px;min-height:38px;
+}
+input[type=number]{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+select:focus-visible,input:focus-visible,button:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+.status{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px;min-height:22px}
+.status .dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex:none}
+.status.ok .dot{background:var(--accent)}
+.status.warn .dot{background:var(--take)}
+.status.err .dot{background:var(--danger)}
+
+.homebtn{white-space:nowrap}
+.modal{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px}
+.modalbox{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:18px;max-width:420px;width:100%;max-height:92vh;overflow:auto;box-shadow:var(--shadow)}
+.modalbox h3{margin:0 0 6px;font-size:16px}
+.modalbox .step{margin-top:12px;font-size:13px}
+.modalbox .step b{display:block;margin-bottom:4px}
+.modalbox ol{margin:0;padding-left:20px;line-height:1.7}
+.kbd{display:inline-block;border:1px solid var(--line);border-radius:4px;padding:0 6px;font-size:12px;background:var(--surface2)}
+.linkrow{display:flex;gap:6px;margin-top:14px}
+.linkrow input{flex:1;min-width:0;font-size:12px;font-family:"IBM Plex Mono",monospace}
+.linkrow button{flex:none}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:20px}
+.tab{background:transparent;border:0;border-bottom:2px solid transparent;border-radius:0;padding:8px 14px;font-weight:600;color:var(--muted);margin-bottom:-1px}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab:hover{color:var(--ink)}
+.prow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px 8px;padding:10px 0;border-top:1px solid var(--line2)}
+.prow .pname{grid-column:1/-1;font-weight:700;font-size:13px;display:flex;justify-content:space-between;align-items:baseline}
+.prow .pname .pp{font-family:"IBM Plex Mono",monospace;font-weight:600}
+.prow label{display:grid;gap:3px;font-size:11px;color:var(--muted)}
+.prow input{min-height:34px;padding:5px 8px;width:100%}
+.pos{color:var(--accent)}.neg{color:var(--danger)}
+.plist{display:grid;gap:6px}
+.plist .pl{display:grid;grid-template-columns:1fr 30px;gap:6px;align-items:center}
+.plist .pl .rm{min-height:30px;padding:0;border:none;background:transparent;color:var(--muted);font-size:16px}
+.brday{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:10px}
+.brday.settled{border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}
+.brhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.brhead .dt{font-weight:700;font-size:16px}
+.brhead .dt .cnt{font-size:12px;font-weight:500;color:var(--muted)}
+.brhead .ops{margin-left:auto;display:flex;gap:4px}
+.chip{font-size:11px;font-weight:600;padding:2px 9px;border-radius:999px}
+.chip.ok{background:var(--accent-soft);color:var(--accent)}
+.chip.pend{background:var(--take-soft);color:var(--take)}
+.brt{width:100%;border-collapse:collapse;min-width:0;font-size:13px}
+.brt th{font-size:10px;letter-spacing:.06em;color:var(--muted);font-weight:500;background:transparent;position:static;padding:4px 6px;border:0}
+.brt td{padding:5px 6px;border-bottom:1px solid var(--line2);white-space:nowrap}
+.brt td.r,.brt th.r{text-align:right}
+.brt td.nm{font-weight:600}
+.brt tr.tot td{border-bottom:0;border-top:1px solid var(--line);font-weight:600}
+.brsettle{margin-top:10px;display:flex;align-items:center;gap:8px 14px;flex-wrap:wrap}
+.brsettle .tr{font-family:"IBM Plex Mono",monospace;font-size:13px}
+.brsettle .tr b{color:var(--take)}
+.brsettle .none{font-size:13px;color:var(--muted)}
+.brsettle .ops{margin-left:auto;display:flex;gap:6px}
+.mobrow{display:none}
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:26px;box-shadow:var(--shadow)}
+.tile{background:var(--surface);padding:16px 18px 14px;min-width:0}
+.tile .lbl{font-size:12px;color:var(--muted);letter-spacing:.06em;margin-bottom:6px}
+.tile .val{font-size:26px;font-weight:600;line-height:1.1;white-space:nowrap}
+.tile .val small{font-size:13px;font-weight:500;color:var(--muted);margin-left:4px}
+.tile.take{background:var(--take-soft)}
+.tile.take .val{color:var(--take)}
+.tile .sub{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.5}
+.tile .sub b{font-weight:600;color:var(--ink)}
+.tile .sub b.pos{color:var(--accent)}.tile .sub b.neg{color:var(--danger)}
+.tileact{margin-top:10px}
+.tileact button{flex:none;width:100%}
+
+.grid{display:grid;grid-template-columns:320px 1fr;gap:24px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:1fr}}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px 18px 16px}
+.panel h2{font-size:14px;font-weight:700;margin:0 0 14px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.panel h2 .chip{font-size:11px;font-weight:500;background:var(--accent-soft);color:var(--accent);padding:2px 8px;border-radius:999px}
+.form{display:grid;gap:12px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.stt{display:grid;grid-template-columns:repeat(3,1fr);gap:6px 10px;margin-top:6px}
+.stt div{font-size:13px}
+.stt .k{font-size:10px;color:var(--muted);letter-spacing:.06em;display:block}
+.stt .v{font-family:"IBM Plex Mono",monospace;font-weight:600}
+label.f{display:grid;gap:5px;font-size:12px;color:var(--muted)}
+label.f input,label.f select{width:100%}
+.datefield{position:relative}
+.datebtn{display:flex;align-items:center;justify-content:space-between;width:100%;text-align:left;font-weight:500;padding:7px 10px}
+.datebtn .calico{color:var(--muted);font-size:13px}
+.datebtn[aria-expanded="true"]{border-color:var(--accent)}
+.cal{position:absolute;z-index:20;top:calc(100% + 6px);left:0;width:280px;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:10px}
+.calhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.caltitle{font-weight:600;font-size:14px}
+.calnav{min-height:30px;padding:0 10px;font-size:18px;line-height:1}
+.calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.calgrid .dh{font-size:11px;color:var(--muted);text-align:center;padding:4px 0}
+.calgrid .dh.sun{color:var(--danger)}
+.calgrid .dh.sat{color:var(--accent)}
+.calgrid button{min-height:34px;padding:0;border:1px solid transparent;background:transparent;border-radius:6px;font-family:"IBM Plex Mono",monospace;font-size:13px}
+.calgrid button:hover{background:var(--surface2)}
+.calgrid button.out{color:var(--muted);opacity:.5}
+.calgrid button.today{border-color:var(--line)}
+.calgrid button.sel{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.calgrid button.has::after{content:"";display:block;width:4px;height:4px;border-radius:50%;background:var(--take);margin:1px auto 0}
+.calgrid button.sel.has::after{background:var(--accent-ink)}
+.calfoot{display:flex;gap:6px;margin-top:8px;justify-content:flex-end}
+.explist{display:grid;gap:6px}
+.explist:empty{display:none}
+.exprow{display:grid;grid-template-columns:1fr 100px 30px;gap:6px;align-items:center}
+.exprow input{min-height:34px;padding:5px 8px}
+.exprow .rm{min-height:30px;padding:0;border:none;background:transparent;color:var(--muted);font-size:16px}
+.exprow .rm:hover{color:var(--danger)}
+.addexp{justify-self:start}
+td .expm{display:block}
+.hint{font-size:12px;color:var(--muted)}
+.hint b{color:var(--ink);font-weight:600}
+.actions{display:flex;gap:8px;margin-top:4px}
+button{font:inherit;cursor:pointer;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:8px 14px;min-height:38px}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700;flex:1}
+button.primary:hover{filter:brightness(1.06)}
+button.ghost{background:transparent}
+button.small{padding:3px 9px;min-height:28px;font-size:12px}
+button.danger{color:var(--danger)}
+button:disabled{opacity:.5;cursor:not-allowed}
+details.settings{margin-top:14px;border-top:1px solid var(--line2);padding-top:10px}
+details.settings summary{cursor:pointer;font-size:12px;color:var(--muted);list-style:none;display:flex;align-items:center;gap:6px}
+details.settings summary::before{content:"▸";font-size:10px}
+details.settings[open] summary::before{content:"▾"}
+details.settings .form{margin-top:10px}
+
+.log{min-width:0}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:1040px}
+th,td{padding:9px 12px;text-align:left;vertical-align:middle;border-bottom:1px solid var(--line2);white-space:nowrap}
+th{font-size:11px;letter-spacing:.08em;color:var(--muted);font-weight:500;background:var(--surface2);position:sticky;top:0}
+td.r,th.r{text-align:right}
+td.memo{white-space:normal;min-width:140px;max-width:280px;color:var(--muted);font-size:13px}
+tr.month td{background:var(--surface2);font-weight:700;font-size:13px;border-top:1px solid var(--line)}
+tr.month.week td:first-child::before{content:"週 ";font-size:10px;letter-spacing:.08em;color:var(--muted);font-weight:500;margin-right:4px}
+tr.month td .cnt{font-weight:400;color:var(--muted);margin-left:8px;font-size:12px}
+tr.data:hover td{background:color-mix(in srgb,var(--accent-soft) 45%,transparent)}
+td.take{color:var(--take);font-weight:600}
+td .ex{display:inline-block;font-size:10px;padding:1px 6px;border-radius:999px;background:var(--surface2);color:var(--muted);margin-left:6px;vertical-align:middle;border:1px solid var(--line)}
+td .ops{display:flex;gap:4px;justify-content:flex-end}
+.dow{color:var(--muted);font-size:12px;margin-left:3px}
+td .expm{display:block;font-size:12px;color:var(--take)}
+.empty{padding:40px 20px;text-align:center;color:var(--muted)}
+.foot{margin-top:14px;font-size:12px;color:var(--muted);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.foot button{min-height:28px;padding:3px 10px;font-size:12px}
+.ro{display:none;background:var(--take-soft);color:var(--take);border:1px solid color-mix(in srgb,var(--take) 30%,transparent);padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:18px}
+body.readonly .ro{display:block}
+body.readonly .writer{display:none !important}
+@media (prefers-reduced-motion:no-preference){tr.data td{transition:background .15s}}
+tr.data td.writer .ops button{min-height:32px;padding:4px 12px}
+@media (max-width:700px){
+  .wrap{padding:16px 12px 60px}
+  h1{font-size:19px}
+  .summary{grid-template-columns:1fr 1fr}
+  .tile{padding:12px 12px 10px}
+  .tile .val{font-size:21px}
+  .tablewrap{overflow:visible;border:0;background:transparent}
+  table{min-width:0;display:block}
+  thead{display:none}
+  tbody{display:block}
+  tr{display:block}
+  tr.month{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 12px;padding:10px 4px 6px;background:transparent;border-top:0}
+  tr.month td{display:inline;padding:0;border:0;background:transparent;font-weight:500;font-size:12px;color:var(--muted)}
+  tr.month td:first-child{display:block;width:100%;font-size:14px;font-weight:700;color:var(--ink)}
+  tr.month td:empty{display:none}
+  tr.month td[data-l]::before{content:attr(data-l) " ";font-weight:400}
+  tr.month td.take{color:var(--take);font-weight:700}
+  tr.data{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px 10px;padding:12px 14px;margin-bottom:8px;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+  tr.data:hover td{background:transparent}
+  tr.data td{display:block;padding:0;border:0;white-space:normal;text-align:left;min-width:0}
+  tr.data td::before{content:attr(data-l);display:block;font-size:10px;color:var(--muted);letter-spacing:.06em;margin-bottom:1px}
+  tr.data td.d{grid-column:1/3;font-size:16px;font-weight:700}
+  tr.data td.d::before{content:none}
+  tr.data td.t{text-align:right}
+  tr.data td.memo{grid-column:1/-1;max-width:none;font-size:13px}
+  tr.data td.memo:empty{display:none}
+  tr.data td.writer{grid-column:1/-1;border-top:1px solid var(--line2);padding-top:8px}
+  tr.data td.writer::before{content:none}
+  tr.data td.writer .ops{justify-content:flex-end}
+  .empty{background:var(--surface);border:1px solid var(--line);border-radius:10px}
+  body.editing::before{content:"";position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:40}
+  body.editing .panel.sheet{position:fixed;left:0;right:0;bottom:0;z-index:50;max-height:92vh;overflow:auto;border-radius:16px 16px 0 0;box-shadow:0 -8px 30px rgba(0,0,0,.25);padding-bottom:24px}
+  body.editing .panel.sheet h2{position:sticky;top:0;background:var(--surface);padding:4px 0 8px;margin:-4px 0 10px;z-index:1}
+  body.editing .cal{position:fixed;left:12px;right:12px;width:auto;top:auto;bottom:auto}
+  .brt{display:table;min-width:0}
+  .brt thead{display:table-header-group}
+  .brt tbody{display:table-row-group}
+  .brt th{display:table-cell}
+  .brt td{display:table-cell;padding:5px 4px;font-size:12px}
+  .brt tr{display:table-row}
+  .brt td::before{content:none}
+  .brt td.nm{white-space:normal}
+}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">Badugi live · rake ledger</div>
+      <h1>バドゥーギ卓 レーキ台帳</h1>
+    </div>
+    <div class="controls">
+      <button type="button" class="small homebtn" id="homeBtn">📱 ホーム画面に追加</button>
+      <select id="period" aria-label="集計期間"></select>
+      <div class="status" id="status"><span class="dot"></span><span id="statusText">読み込み中</span></div>
+    </div>
+  </header>
+
+  <div class="ro" id="ro">この画面は表示のみです。</div>
+
+  <div class="tabs" role="tablist">
+    <button type="button" class="tab active" role="tab" data-tab="rake" id="tabBtnRake">レーキ台帳</button>
+    <button type="button" class="tab" role="tab" data-tab="br" id="tabBtnBr">バンクロール</button>
+    <button type="button" class="tab" role="tab" data-tab="st" id="tabBtnSt">ステーキング</button>
+  </div>
+
+  <div id="tabBr" hidden>
+    <section class="summary" id="brSummary" aria-label="バンクロール集計"></section>
+    <div class="grid">
+      <aside class="panel writer" id="brPanel">
+        <h2><span id="brFormTitle">セッションを追加</span><span class="chip ok" id="brFormMode" hidden>編集中</span></h2>
+        <form class="form" id="brForm" autocomplete="off">
+          <div class="f datefield">
+            <span>日付</span>
+            <input type="hidden" id="bDate">
+            <button type="button" class="datebtn" id="bDateBtn" aria-haspopup="dialog" aria-expanded="false"><span id="bDateLabel">—</span><span class="calico" aria-hidden="true">▦</span></button>
+            <div class="cal" id="bCal" hidden role="dialog" aria-label="日付を選ぶ">
+              <div class="calhead">
+                <button type="button" class="calnav" id="bCalPrev" aria-label="前の月">‹</button>
+                <div class="caltitle num" id="bCalTitle"></div>
+                <button type="button" class="calnav" id="bCalNext" aria-label="次の月">›</button>
+              </div>
+              <div class="calgrid" id="bCalGrid"></div>
+              <div class="calfoot"><button type="button" class="small" id="bCalToday">今日</button><button type="button" class="small" id="bCalYesterday">昨日</button></div>
+            </div>
+          </div>
+          <div id="brInputs"></div>
+          <div class="hint" id="brHint"></div>
+          <div class="actions">
+            <button type="submit" class="primary" id="brSubmit">保存</button>
+            <button type="button" class="ghost" id="brCancel" hidden>キャンセル</button>
+          </div>
+        </form>
+        <details class="settings" id="brSettings">
+          <summary>プレイヤー名・共有割合</summary>
+          <div class="form">
+            <div class="plist" id="plist"></div>
+            <button type="button" class="small addexp" id="addPlayer">＋ プレイヤーを追加</button>
+            <label class="f"><span>共有割合 (%)</span><select id="brRate"></select></label>
+            <div class="hint">未精算の回をすべて合算し、お互いの損益を共有割合ぶん折半します。100%なら「相手の負けの半分を払い、相手の勝ちの半分をもらう」= 二人とも同じ損益になるように精算。例: かずや −11,000 / なるっふ 0 なら なるっふ → かずや 5,500</div>
+            <div class="actions"><button type="button" id="savePlayers">保存</button></div>
+          </div>
+        </details>
+      </aside>
+      <section class="log">
+        <div id="brList"></div>
+        <div class="foot"><span id="brFoot"></span></div>
+      </section>
+    </div>
+  </div>
+
+  <div id="tabSt" hidden>
+    <section class="summary" id="stSummary" aria-label="ステーキング集計"></section>
+    <div class="grid">
+      <aside class="panel writer" id="stPanel">
+        <h2><span id="stFormTitle">セッションを追加</span><span class="chip ok" id="stFormMode" hidden>編集中</span></h2>
+        <form class="form" id="stForm" autocomplete="off">
+          <div class="f datefield">
+            <span>日付</span>
+            <input type="hidden" id="sDate">
+            <button type="button" class="datebtn" id="sDateBtn" aria-haspopup="dialog" aria-expanded="false"><span id="sDateLabel">—</span><span class="calico" aria-hidden="true">▦</span></button>
+            <div class="cal" id="sCal" hidden role="dialog" aria-label="日付を選ぶ">
+              <div class="calhead">
+                <button type="button" class="calnav" id="sCalPrev" aria-label="前の月">‹</button>
+                <div class="caltitle num" id="sCalTitle"></div>
+                <button type="button" class="calnav" id="sCalNext" aria-label="次の月">›</button>
+              </div>
+              <div class="calgrid" id="sCalGrid"></div>
+              <div class="calfoot"><button type="button" class="small" id="sCalToday">今日</button><button type="button" class="small" id="sCalYesterday">昨日</button></div>
+            </div>
+          </div>
+          <div class="row3">
+            <label class="f">開始BR<input type="number" id="stS" inputmode="numeric" step="1" required></label>
+            <label class="f">リバイ<input type="number" id="stR" inputmode="numeric" step="1" min="0" placeholder="0"></label>
+            <label class="f">終了BR<input type="number" id="stE" inputmode="numeric" step="1" required></label>
+          </div>
+          <div class="row2">
+            <label class="f">ステーキング割合 (%)<select id="stRate"></select></label>
+            <label class="f">相手<input type="text" id="stWho" maxlength="20" placeholder="ステーカー名（任意）"></label>
+          </div>
+          <div class="hint" id="stHint">損益: <b>—</b></div>
+          <label class="f">メモ<input type="text" id="stMemo" maxlength="120" placeholder="任意"></label>
+          <div class="actions">
+            <button type="submit" class="primary" id="stSubmit">追加して保存</button>
+            <button type="button" class="ghost" id="stCancel" hidden>キャンセル</button>
+          </div>
+        </form>
+        <div class="hint" style="margin-top:12px">ステーキング割合 = 相手が持つ割合。損益 × 割合 が相手の取り分（勝ちなら相手に渡す、負けなら相手が補填）。残りが自分の分。</div>
+      </aside>
+      <section class="log">
+        <div id="stList"></div>
+        <div class="foot"><span id="stFoot"></span></div>
+      </section>
+    </div>
+  </div>
+
+  <div class="modal" id="homeModal" hidden role="dialog" aria-label="ホーム画面に追加">
+    <div class="modalbox">
+      <h3>ホーム画面に追加</h3>
+      <p class="hint">このページをスマホのホーム画面に置くと、アプリのように1タップで開けます。</p>
+      <div class="step"><b>iPhone (Safari)</b><ol><li>Safariでこのページを開く</li><li>画面下の共有ボタン <span class="kbd">⎋</span> をタップ</li><li>「ホーム画面に追加」→「追加」</li></ol></div>
+      <div class="step"><b>Android (Chrome)</b><ol><li>このページをChromeで開いていれば、上の「ホーム画面に追加」ボタンだけで登録できます</li><li>出ない場合は右上の <span class="kbd">⋮</span> → 「ホーム画面に追加」</li></ol></div>
+      <div class="linkrow"><input type="text" id="pageUrl" readonly value=""><button type="button" class="small primary" id="copyUrl">リンクをコピー</button></div>
+      <p class="hint" id="copyMsg"></p>
+      <div class="actions"><button type="button" id="homeClose">閉じる</button></div>
+    </div>
+  </div>
+
+  <div id="tabRake">
+  <section class="summary" id="summary" aria-label="集計"></section>
+
+  <div class="grid">
+    <aside class="panel writer" id="formPanel">
+      <h2><span id="formTitle">セッションを追加</span><span class="chip" id="formMode" hidden>編集中</span></h2>
+      <form class="form" id="form" autocomplete="off">
+        <div class="f datefield">
+          <span>日付</span>
+          <input type="hidden" id="fDate">
+          <button type="button" class="datebtn" id="dateBtn" aria-haspopup="dialog" aria-expanded="false"><span id="dateLabel">—</span><span class="calico" aria-hidden="true">▦</span></button>
+          <div class="cal" id="cal" hidden role="dialog" aria-label="日付を選ぶ">
+            <div class="calhead">
+              <button type="button" class="calnav" id="calPrev" aria-label="前の月">‹</button>
+              <div class="caltitle num" id="calTitle"></div>
+              <button type="button" class="calnav" id="calNext" aria-label="次の月">›</button>
+            </div>
+            <div class="calgrid" id="calGrid"></div>
+            <div class="calfoot"><button type="button" class="small" id="calToday">今日</button><button type="button" class="small" id="calYesterday">昨日</button></div>
+          </div>
+        </div>
+        <div class="row2">
+          <label class="f">開始<input type="time" id="fStart" required></label>
+          <label class="f">終了<input type="time" id="fEnd" required></label>
+        </div>
+        <div class="hint" id="hoursHint">稼働時間: <b>—</b></div>
+        <div class="row2">
+          <label class="f"><span>レーキ総額 (<span class="unitLbl">P</span>)</span><input type="number" id="fRake" min="0" step="1" inputmode="numeric" required placeholder="0"></label>
+          <label class="f">取り分 (%)<select id="fShare" required></select></label>
+        </div>
+        <div class="hint" id="takeHint">取り分: <b>—</b></div>
+        <div class="f explist-wrap">
+          <span>経費 (<span class="unitLbl">P</span>)</span>
+          <div class="explist" id="expList"></div>
+          <button type="button" class="small addexp" id="addExp">＋ 経費項目を追加</button>
+        </div>
+        <div class="hint" id="netHint">純利益（取り分 − 経費）: <b>—</b></div>
+        <label class="f">メモ<input type="text" id="fMemo" placeholder="卓数、来た人など（任意）" maxlength="120"></label>
+        <div class="actions">
+          <button type="submit" class="primary" id="submitBtn">追加して保存</button>
+          <button type="button" class="ghost" id="cancelBtn" hidden>キャンセル</button>
+        </div>
+      </form>
+      <details class="settings">
+        <summary>設定（取り分の初期値・単位）</summary>
+        <div class="form">
+          <div class="row2">
+            <label class="f">取り分の初期値 (%)<select id="sShare"></select></label>
+            <label class="f">単位<input type="text" id="sUnit" maxlength="6"></label>
+          </div>
+          <div class="actions"><button type="button" id="saveSettings">設定を保存</button></div>
+        </div>
+      </details>
+    </aside>
+
+    <section class="log">
+      <div class="tablewrap">
+        <table id="table">
+          <thead><tr>
+            <th>日付</th><th>時間帯</th><th class="r">稼働</th><th class="r">レーキ</th><th class="r">レーキ/h</th><th class="r">取り分%</th><th class="r">取り分</th><th class="r">取り分/h</th><th class="r">経費</th><th class="r">純利益</th><th>メモ</th><th class="writer"></th>
+          </tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div class="foot">
+        <span id="footNote"></span>
+        <span class="writer" id="exampleOps" hidden><button type="button" id="clearExamples">サンプル行をすべて消す</button></span>
+      </div>
+    </section>
+  </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>window.FIREBASE_CONFIG={"apiKey":"AIzaSyD3X4VI-0fge6fqXEeDOppLa_NgdP3wHi0","authDomain":"badugi-3fc3a.firebaseapp.com","databaseURL":"https://badugi-3fc3a-default-rtdb.asia-southeast1.firebasedatabase.app","projectId":"badugi-3fc3a","storageBucket":"badugi-3fc3a.firebasestorage.app","messagingSenderId":"120734179711","appId":"1:120734179711:web:0e917f40aecb6fe7767a4a"};</script>
+<script>
+(function(){
+  'use strict';
+  const $=id=>document.getElementById(id);
+  let DATA={};
+  const state={settings:Object.assign({share:50,unit:'P'},DATA.settings||{}),rows:Array.isArray(DATA.rows)?DATA.rows.slice():[],
+    br:Object.assign({players:[{id:'p1',name:'かずや'},{id:'p2',name:'なるっふ'}],rate:100,days:[]},DATA.br||{})};
+  if(!Array.isArray(state.br.players)||!state.br.players.length)state.br.players=[{id:'p1',name:'かずや'},{id:'p2',name:'なるっふ'}];
+  if(!Array.isArray(state.br.days))state.br.days=[];
+  state.br.days.forEach((d,i)=>{if(!d.id)d.id='d'+String(d.date||'').replace(/-/g,'')+'_'+i;});
+  if(!Array.isArray(state.br.settlements))state.br.settlements=[];
+  state.br.days.forEach(d=>{if(d.settled&&!d.settlementId){const sid='s_'+d.id;state.br.settlements.push({id:sid,at:d.settledAt||new Date().toISOString(),entryIds:[d.id],amounts:d.amounts||{},transfers:d.transfers||[]});d.settlementId=sid;}});
+  state.st=Object.assign({rate:50,days:[]},DATA.st||{});if(!Array.isArray(state.st.days))state.st.days=[];
+  let activeTab='rake';
+  let art=null, artReady=false, readOnly=false, editingId=null, period=null;
+
+  // ---------- helpers ----------
+  const DOW=['日','月','火','水','木','金','土'];
+  function hoursOf(r){
+    if(!r.start||!r.end) return 0;
+    const [sh,sm]=r.start.split(':').map(Number),[eh,em]=r.end.split(':').map(Number);
+    let m=(eh*60+em)-(sh*60+sm); if(m<0) m+=24*60; return m/60;
+  }
+  const takeOf=r=>Math.round((Number(r.rake)||0)*(Number(r.share)||0)/100);
+  const expsOf=r=>Array.isArray(r.exps)?r.exps:((Number(r.exp)||0)>0?[{name:r.expMemo||'経費',amt:Number(r.exp)}]:[]);
+  const expOf=r=>expsOf(r).reduce((a,e)=>a+(Number(e.amt)||0),0);
+  const netOf=r=>takeOf(r)-expOf(r);
+  const SHARE_STEPS=Array.from({length:21},(_,i)=>i*5);
+  function fillShare(sel,val){sel.innerHTML=SHARE_STEPS.map(v=>`<option value="${v}">${v}%</option>`).join('');const n=Number(val);sel.value=String(SHARE_STEPS.includes(n)?n:Math.min(100,Math.max(0,Math.round(n/5)*5)));}
+  const fmtN=n=>Math.round(n).toLocaleString('ja-JP');
+  const fmtH=h=>{const m=Math.round(h*60);return Math.floor(m/60)+'h'+(m%60?String(m%60).padStart(2,'0'):'00');};
+  const fmtD=d=>{const [y,m,dd]=d.split('-');const dt=new Date(+y,+m-1,+dd);return `${+m}/${+dd}<span class="dow">${DOW[dt.getDay()]}</span>`;};
+  const monthKey=d=>d.slice(0,7);
+  const WEEK_START_HOUR=2;
+  const p2=n=>String(n).padStart(2,'0');
+  function weekKeyOf(date,start){
+    const [y,m,d]=String(date).split('-').map(Number);const [hh,mm]=String(start||'12:00').split(':').map(Number);
+    const dt=new Date(y,m-1,d,hh||0,mm||0);dt.setHours(dt.getHours()-WEEK_START_HOUR);
+    const dow=(dt.getDay()+6)%7;const mon=new Date(dt.getFullYear(),dt.getMonth(),dt.getDate()-dow);
+    return `${mon.getFullYear()}-${p2(mon.getMonth()+1)}-${p2(mon.getDate())}`;
+  }
+  function weekLbl(k){const [y,m,d]=k.split('-').map(Number);const a=new Date(y,m-1,d),b=new Date(y,m-1,d+6);return `${a.getMonth()+1}/${a.getDate()}(月) 〜 ${b.getMonth()+1}/${b.getDate()}(日)`;}
+  const isWeek=p=>typeof p==='string'&&p.startsWith('W:');
+  function inPeriod(date,start){if(period==='all')return true;if(isWeek(period))return weekKeyOf(date,start)===period.slice(2);return monthKey(date)===period;}
+  function periodLbl(){return period==='all'?'全期間':isWeek(period)?weekLbl(period.slice(2))+'の週':monthLbl(period);}
+  const monthLbl=k=>{const [y,m]=k.split('-');return `${y}年${+m}月`;};
+  const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+  const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
+  function setStatus(text,cls){const s=$('status');s.className='status '+(cls||'');$('statusText').textContent=text;}
+
+  // ---------- storage (Firebase Realtime Database) ----------
+  let dbRef=null, applyingRemote=false, lastLocalWrite=0;
+  function payload(){return {settings:state.settings,rows:state.rows,br:state.br,st:state.st,updated:new Date().toISOString()};}
+  async function persist(){
+    if(!dbRef){setStatus('データベースに接続できていません','err');return false;}
+    setStatus('保存中…');lastLocalWrite=Date.now();
+    try{await dbRef.set(payload());setStatus('保存しました · 全員に反映されます','ok');return true;}
+    catch(e){setStatus('保存できませんでした: '+(e&&e.message||e),'err');return false;}
+  }
+  function applyRemote(v){
+    if(!v||typeof v!=='object')return;
+    applyingRemote=true;
+    try{
+      state.settings=Object.assign({share:50,unit:'P'},v.settings||{});
+      state.rows=Array.isArray(v.rows)?v.rows:Object.values(v.rows||{});
+      const br=Object.assign({players:[{id:'p1',name:'かずや'},{id:'p2',name:'なるっふ'}],rate:50,days:[],settlements:[]},v.br||{});
+      br.days=Array.isArray(br.days)?br.days:Object.values(br.days||{});
+      br.settlements=Array.isArray(br.settlements)?br.settlements:Object.values(br.settlements||{});
+      br.players=Array.isArray(br.players)?br.players:Object.values(br.players||{});
+      br.days.forEach(d=>{if(d.exps===undefined&&d.vals===undefined)return;});
+      state.br=br;DATA.updated=v.updated;
+      const st=Object.assign({rate:50,days:[]},v.st||{});st.days=Array.isArray(st.days)?st.days:Object.values(st.days||{});state.st=st;if(typeof stReset==='function'&&!stEditing){stFillRate(state.st.rate);}
+      state.rows.forEach(r=>{if(!Array.isArray(r.exps))r.exps=r.exps?Object.values(r.exps):[];});
+      state.br.days.forEach((d,i)=>{if(!d.id)d.id='d'+String(d.date||'').replace(/-/g,'')+'_'+i;if(!d.vals)d.vals={};});
+      state.br.settlements.forEach(x=>{if(!Array.isArray(x.entryIds))x.entryIds=Object.values(x.entryIds||{});if(!Array.isArray(x.transfers))x.transfers=Object.values(x.transfers||{});});
+      renderPlayers();if(!brEditing)renderBrInputs();fillShare($('sShare'),state.settings.share);$('sUnit').value=state.settings.unit;
+      if(!editingId)fillShare($('fShare'),state.settings.share);
+      render();
+    }finally{applyingRemote=false;}
+  }
+  function enterReadOnly(){readOnly=true;document.body.classList.add('readonly');setStatus('表示のみ','warn');render();}
+  window.enterReadOnly=enterReadOnly;
+
+  // ---------- rendering ----------
+  function sortedRows(){return state.rows.slice().sort((a,b)=>(b.date+b.start).localeCompare(a.date+a.start));}
+  function months(){const s=new Set(state.rows.map(r=>monthKey(r.date)).concat(state.br.days.map(d=>monthKey(d.date))).concat(state.st.days.map(d=>monthKey(d.date))));return [...s].sort().reverse();}
+  function weeks(){const s=new Set(state.rows.map(r=>weekKeyOf(r.date,r.start)).concat(state.br.days.map(d=>weekKeyOf(d.date,'12:00'))).concat(state.st.days.map(d=>weekKeyOf(d.date,'12:00'))));return [...s].sort().reverse();}
+  function renderPeriod(){
+    const sel=$('period');const ms=months();const ws=weeks();
+    const cur=monthKey(today());
+    if(period===null) period=ms.includes(cur)?cur:(ms[0]||'all');
+    if(period!=='all'&&!ms.includes(period)&&!(isWeek(period)&&ws.includes(period.slice(2)))) period=ms[0]||'all';
+    const curW=weekKeyOf(today(),new Date().getHours()+':'+new Date().getMinutes());
+    sel.innerHTML='<optgroup label="月">'+ms.map(k=>`<option value="${k}">${monthLbl(k)}</option>`).join('')+'</optgroup>'
+      +'<optgroup label="週（月曜 2:00 区切り）">'+ws.map(k=>`<option value="W:${k}">${weekLbl(k)}${k===curW?' · 今週':''}</option>`).join('')+'</optgroup>'
+      +'<option value="all">全期間</option>';
+    sel.value=period;
+  }
+  function visibleRows(){return sortedRows().filter(r=>inPeriod(r.date,r.start));}
+  function sums(rows){return rows.reduce((a,r)=>{a.h+=hoursOf(r);a.rake+=Number(r.rake)||0;a.take+=takeOf(r);a.exp+=expOf(r);a.net+=netOf(r);a.n++;return a;},{h:0,rake:0,take:0,exp:0,net:0,n:0});}
+  function renderSummary(rows){
+    const s=sums(rows);const u=esc(state.settings.unit);
+    const perH=s.h>0?s.net/s.h:0;const rakePerH=s.h>0?s.rake/s.h:0;
+    $('summary').innerHTML=`
+      <div class="tile"><div class="lbl">稼働時間</div><div class="val num">${fmtH(s.h)}</div><div class="sub">${s.n} セッション · ${periodLbl()}</div></div>
+      <div class="tile"><div class="lbl">レーキ総額</div><div class="val num">${fmtN(s.rake)}<small>${u}</small></div><div class="sub">${fmtN(rakePerH)} ${u}/h</div></div>
+      <div class="tile"><div class="lbl">取り分合計</div><div class="val num">${fmtN(s.take)}<small>${u}</small></div><div class="sub">${s.rake>0?(s.take/s.rake*100).toFixed(1):'0.0'}% 実効</div></div>
+      <div class="tile"><div class="lbl">経費合計</div><div class="val num">${fmtN(s.exp)}<small>${u}</small></div><div class="sub">取り分の ${s.take>0?(s.exp/s.take*100).toFixed(1):'0.0'}%</div></div>
+      <div class="tile take"><div class="lbl">純利益</div><div class="val num">${fmtN(s.net)}<small>${u}</small></div><div class="sub">取り分 − 経費</div></div>
+      <div class="tile take"><div class="lbl">純利益 / 時間</div><div class="val num">${fmtN(perH)}<small>${u}/h</small></div><div class="sub">時給換算</div></div>`;
+  }
+  function renderTable(rows){
+    const tb=$('tbody');const u=esc(state.settings.unit);
+    if(!rows.length){tb.innerHTML=`<tr><td colspan="12" class="empty">まだ記録がありません。フォームから追加してください。</td></tr>`;return;}
+    let html='';let curM=null;
+    const groups={};rows.forEach(r=>{(groups[weekKeyOf(r.date,r.start)]??=[]).push(r);});
+    for(const r of rows){
+      const mk=weekKeyOf(r.date,r.start);
+      if(mk!==curM){curM=mk;const g=sums(groups[mk]);
+        html+=`<tr class="month week"><td colspan="2">${weekLbl(mk)}<span class="cnt">${g.n}回</span></td><td class="r num" data-l="稼働">${fmtH(g.h)}</td><td class="r num" data-l="レーキ">${fmtN(g.rake)}</td><td class="r num" data-l="レーキ/h">${g.h>0?fmtN(g.rake/g.h):'–'}</td><td></td><td class="r num" data-l="取り分">${fmtN(g.take)}</td><td class="r num" data-l="取り分/h">${g.h>0?fmtN(g.take/g.h):'–'}</td><td class="r num" data-l="経費">${fmtN(g.exp)}</td><td class="r num take" data-l="純利益">${fmtN(g.net)}</td><td colspan="2"></td></tr>`;}
+      html+=`<tr class="data" data-id="${esc(r.id)}"><td class="d">${fmtD(r.date)}${r.example?'<span class="ex">例</span>':''}</td><td class="num t" data-l="時間帯">${esc(r.start)}–${esc(r.end)}</td><td class="r num" data-l="稼働">${fmtH(hoursOf(r))}</td><td class="r num" data-l="レーキ">${fmtN(r.rake)}</td><td class="r num" data-l="レーキ/h">${hoursOf(r)>0?fmtN(r.rake/hoursOf(r)):'–'}</td><td class="r num" data-l="取り分%">${Number(r.share)}%</td><td class="r num" data-l="取り分">${fmtN(takeOf(r))}</td><td class="r num" data-l="取り分/h">${hoursOf(r)>0?fmtN(takeOf(r)/hoursOf(r)):'–'}</td><td class="r num" data-l="経費">${expOf(r)?fmtN(expOf(r)):'–'}</td><td class="r num take" data-l="純利益">${fmtN(netOf(r))}</td><td class="memo">${esc(r.memo)}${expsOf(r).map(e=>`<span class="expm">${esc(e.name||'経費')} ${fmtN(e.amt)}</span>`).join('')}</td><td class="writer"><div class="ops"><button type="button" class="small" data-act="edit">編集</button><button type="button" class="small danger" data-act="del">削除</button></div></td></tr>`;
+    }
+    tb.innerHTML=html;
+  }
+  function render(){
+    renderPeriod();const rows=visibleRows();renderSummary(rows);renderTable(rows);renderBr();renderSt();
+    document.querySelectorAll('.unitLbl').forEach(el=>el.textContent=state.settings.unit);
+    $('exampleOps').hidden=!state.rows.some(r=>r.example);
+    const upd=DATA.updated?new Date(DATA.updated):null;
+    $('footNote').textContent=(state.rows.length?`全 ${state.rows.length} セッション`:'')+(upd?`　最終保存 ${upd.getMonth()+1}/${upd.getDate()} ${String(upd.getHours()).padStart(2,'0')}:${String(upd.getMinutes()).padStart(2,'0')}`:'');
+  }
+
+  // ---------- calendar (reusable) ----------
+  const pad2=n=>String(n).padStart(2,'0');
+  const iso=(y,m,d)=>`${y}-${pad2(m+1)}-${pad2(d)}`;
+  const CALS=[];
+  function makeCal(ids,opts){
+    let Y=0,M=0;
+    const el=k=>$(ids[k]);
+    const wrap=el('cal').closest('.datefield');
+    function set(v){el('hidden').value=v;const [y,m,d]=v.split('-').map(Number);const dt=new Date(y,m-1,d);el('label').textContent=`${y}/${pad2(m)}/${pad2(d)} (${DOW[dt.getDay()]})`;Y=y;M=m-1;if(opts.onChange)opts.onChange(v);}
+    function draw(){
+      el('title').textContent=`${Y}年${M+1}月`;
+      const sel=el('hidden').value,tdy=today();const has=opts.hasDates?opts.hasDates():new Set();
+      const startDow=new Date(Y,M,1).getDay();const dim=new Date(Y,M+1,0).getDate();const prevDim=new Date(Y,M,0).getDate();
+      let html=DOW.map((d,i)=>`<div class="dh${i===0?' sun':i===6?' sat':''}">${d}</div>`).join('');
+      const cells=[];
+      for(let i=startDow-1;i>=0;i--){const m=M-1;cells.push({y:m<0?Y-1:Y,m:(m+12)%12,d:prevDim-i,out:true});}
+      for(let d=1;d<=dim;d++)cells.push({y:Y,m:M,d,out:false});
+      let nd=1;while(cells.length%7){cells.push({y:M===11?Y+1:Y,m:(M+1)%12,d:nd++,out:true});}
+      for(const c of cells){const v=iso(c.y,c.m,c.d);html+=`<button type="button" data-v="${v}" class="${c.out?'out ':''}${v===sel?'sel ':''}${v===tdy?'today ':''}${has.has(v)?'has':''}">${c.d}</button>`;}
+      el('grid').innerHTML=html;
+    }
+    function open(){draw();el('cal').hidden=false;el('btn').setAttribute('aria-expanded','true');}
+    function close(){el('cal').hidden=true;el('btn').setAttribute('aria-expanded','false');}
+    const isOpen=()=>!el('cal').hidden;
+    el('btn').addEventListener('click',()=>{isOpen()?close():open();});
+    el('prev').addEventListener('click',()=>{M--;if(M<0){M=11;Y--;}draw();});
+    el('next').addEventListener('click',()=>{M++;if(M>11){M=0;Y++;}draw();});
+    el('grid').addEventListener('click',ev=>{const b=ev.target.closest('button[data-v]');if(!b)return;set(b.dataset.v);close();});
+    el('today').addEventListener('click',()=>{set(today());close();});
+    el('yest').addEventListener('click',()=>{const d=new Date();d.setDate(d.getDate()-1);set(iso(d.getFullYear(),d.getMonth(),d.getDate()));close();});
+    const api={set,get:()=>el('hidden').value,close,isOpen,wrap,btn:el('btn')};CALS.push(api);return api;
+  }
+  document.addEventListener('click',ev=>{CALS.forEach(c=>{if(c.isOpen()&&!ev.target.closest('.datefield'))c.close();});});
+  document.addEventListener('keydown',ev=>{if(ev.key!=='Escape')return;if(!$('homeModal').hidden){$('homeModal').hidden=true;return;}const o=CALS.find(c=>c.isOpen());if(o){o.close();o.btn.focus();}else if(editingId||brEditing||stEditing){closeSheets();}});
+  document.addEventListener('click',ev=>{if((editingId||brEditing||stEditing)&&document.body.classList.contains('editing')&&window.matchMedia('(max-width:700px)').matches&&!ev.target.closest('.panel.sheet')&&!ev.target.closest('button[data-act]')&&!ev.target.closest('button[data-bact]')&&!ev.target.closest('button[data-sact]'))closeSheets();});
+  function closeSheets(){if(editingId)resetForm();if(brEditing)brReset();if(stEditing)stReset();}
+
+  // ---------- form ----------
+  function readForm(){return{date:$('fDate').value,start:$('fStart').value,end:$('fEnd').value,rake:Number($('fRake').value)||0,share:Number($('fShare').value)||0,memo:$('fMemo').value.trim(),exps:readExps()};}
+  function readExps(){return [...$('expList').querySelectorAll('.exprow')].map(row=>({name:row.querySelector('.en').value.trim(),amt:Number(row.querySelector('.ea').value)||0})).filter(e=>e.name||e.amt);}
+  function addExpRow(e){const row=document.createElement('div');row.className='exprow';row.innerHTML=`<input type="text" class="en" placeholder="内容（飲み物、場所代…）" maxlength="40"><input type="number" class="ea" min="0" step="1" inputmode="numeric" placeholder="0"><button type="button" class="rm" aria-label="この経費を削除">×</button>`;
+    if(e){row.querySelector('.en').value=e.name||'';row.querySelector('.ea').value=e.amt||'';}
+    $('expList').appendChild(row);return row;}
+  $('addExp').addEventListener('click',()=>{addExpRow().querySelector('.en').focus();});
+  $('expList').addEventListener('click',ev=>{const b=ev.target.closest('.rm');if(!b)return;b.closest('.exprow').remove();updateHints();});
+  $('expList').addEventListener('input',updateHints);
+  function updateHints(){
+    const r=readForm();const h=hoursOf(r);
+    $('hoursHint').innerHTML=`稼働時間: <b>${(r.start&&r.end)?fmtH(h):'—'}</b>`;
+    $('takeHint').innerHTML=`取り分: <b>${fmtN(takeOf(r))} ${esc(state.settings.unit)}</b>`;
+    $('netHint').innerHTML=`純利益（取り分 − 経費）: <b>${fmtN(netOf(r))} ${esc(state.settings.unit)}</b>`;
+  }
+  function resetForm(){
+    editingId=null;$('formPanel').classList.remove('sheet');if(!brEditing&&!stEditing)document.body.classList.remove('editing');$('form').reset();$('expList').innerHTML='';rakeCal.close();rakeCal.set(today());fillShare($('fShare'),state.settings.share);
+    $('formTitle').textContent='セッションを追加';$('formMode').hidden=true;$('submitBtn').textContent='追加して保存';$('cancelBtn').hidden=true;updateHints();
+  }
+  function startEdit(id){
+    const r=state.rows.find(x=>x.id===id);if(!r){setStatus('この行が見つかりません（再読み込みしてください）','err');return;}
+    editingId=id;rakeCal.set(r.date);$('fStart').value=r.start;$('fEnd').value=r.end;$('fRake').value=r.rake;fillShare($('fShare'),r.share);$('fMemo').value=r.memo||'';$('expList').innerHTML='';expsOf(r).forEach(addExpRow);
+    $('formTitle').textContent='セッションを編集';$('formMode').hidden=false;$('submitBtn').textContent='更新して保存';$('cancelBtn').hidden=false;updateHints();
+    document.body.classList.add('editing');$('formPanel').classList.add('sheet');
+    setStatus('編集中: '+r.date+' '+r.start+'–'+r.end,'ok');
+    let wide=true;try{wide=window.matchMedia('(min-width:701px)').matches;}catch(_){}
+    if(wide){try{$('formPanel').scrollIntoView({behavior:'smooth',block:'start'});}catch(_){try{window.scrollTo(0,0);}catch(__){}}try{$('fRake').focus({preventScroll:true});}catch(_){}}
+  }
+  ['fStart','fEnd','fRake','fShare'].forEach(id=>{$(id).addEventListener('input',updateHints);$(id).addEventListener('change',updateHints);});
+  $('form').addEventListener('submit',async ev=>{
+    ev.preventDefault();if(readOnly)return;
+    const r=readForm();if(!r.date||!r.start||!r.end)return;
+    if(editingId){const i=state.rows.findIndex(x=>x.id===editingId);if(i>=0)state.rows[i]=Object.assign({},state.rows[i],r,{example:false});delete state.rows[i].exp;delete state.rows[i].expMemo;}
+    else state.rows.push(Object.assign({id:uid()},r));
+    state.settings.share=r.share;
+    if(!(isWeek(period)&&weekKeyOf(r.date,r.start)===period.slice(2)))period=monthKey(r.date);
+    resetForm();render();await persist();
+  });
+  $('cancelBtn').addEventListener('click',resetForm);
+  let lastDeleted=null;
+  $('tbody').addEventListener('click',async ev=>{
+    try{
+      const b=ev.target.closest('button[data-act]');if(!b||readOnly)return;
+      ev.preventDefault();
+      const id=b.closest('tr').dataset.id;
+      if(b.dataset.act==='edit'){startEdit(id);return;}
+      if(b.dataset.act==='del'){
+        const r=state.rows.find(x=>x.id===id);if(!r)return;
+        lastDeleted=r;
+        state.rows=state.rows.filter(x=>x.id!==id);if(editingId===id)resetForm();
+        render();
+        $('footNote').innerHTML=`${esc(r.date)} ${esc(r.start)}–${esc(r.end)} を消しました <button type="button" class="small" id="undoDel">元に戻す</button>`;
+        await persist();
+      }
+    }catch(e){setStatus('エラー: '+(e&&e.message||e),'err');}
+  });
+  document.addEventListener('click',async ev=>{
+    if(!ev.target.closest('#undoDel')||!lastDeleted)return;
+    state.rows.push(lastDeleted);lastDeleted=null;render();await persist();
+  });
+  $('clearExamples').addEventListener('click',async()=>{
+    if(readOnly)return;
+    state.rows=state.rows.filter(r=>!r.example);period=null;render();await persist();
+  });
+  $('saveSettings').addEventListener('click',async()=>{
+    if(readOnly)return;
+    const sh=Number($('sShare').value);const un=$('sUnit').value.trim()||'P';
+    state.settings={share:isFinite(sh)&&sh>=0?sh:state.settings.share,unit:un};
+    if(!editingId)fillShare($('fShare'),state.settings.share);
+    render();updateHints();await persist();
+  });
+  $('period').addEventListener('change',ev=>{period=ev.target.value;render();});
+
+  // ---------- bankroll ----------
+  let brEditing=null; // entry id being edited
+  const RATE_STEPS=Array.from({length:20},(_,i)=>(i+1)*5);
+  const pname=id=>{const p=state.br.players.find(x=>x.id===id);return p?p.name:'?';};
+  const profitOf=(day,pid)=>{const v=(day.vals||{})[pid]||{};return (Number(v.e)||0)-(Number(v.s)||0)-(Number(v.r)||0);};
+  const hasVals=(day,pid)=>{const v=(day.vals||{})[pid];return !!v&&(v.s!==''&&v.s!=null||v.e!==''&&v.e!=null||v.r);};
+  const fmtS=n=>(n>0?'+':n<0?'−':'±')+fmtN(Math.abs(n));
+  const cls=n=>n>0?'pos':n<0?'neg':'';
+  function profitsOf(entries){const p={};state.br.players.forEach(pl=>p[pl.id]=0);entries.forEach(d=>state.br.players.forEach(pl=>{if(hasVals(d,pl.id))p[pl.id]+=profitOf(d,pl.id);}));return p;}
+  function settleFromProfits(p){
+    const ids=state.br.players.map(x=>x.id);if(!ids.length)return{amounts:{},transfers:[]};
+    const sum=ids.reduce((a,i)=>a+(p[i]||0),0);const mean=sum/ids.length;const rate=(Number(state.br.rate)||0)/100;
+    const amounts={};ids.forEach(i=>{amounts[i]=Math.round(rate*((p[i]||0)-mean));});
+    const payers=ids.filter(i=>amounts[i]>0).map(i=>({id:i,left:amounts[i]})).sort((a,b)=>b.left-a.left);
+    const recv=ids.filter(i=>amounts[i]<0).map(i=>({id:i,left:-amounts[i]})).sort((a,b)=>b.left-a.left);
+    const transfers=[];let i=0,j=0;
+    while(i<payers.length&&j<recv.length){const a=Math.min(payers[i].left,recv[j].left);if(a>0)transfers.push({from:payers[i].id,to:recv[j].id,fromName:pname(payers[i].id),toName:pname(recv[j].id),amt:a});payers[i].left-=a;recv[j].left-=a;if(payers[i].left<=0)i++;if(recv[j].left<=0)j++;}
+    return{amounts,transfers};
+  }
+  function settleCalc(entries){return settleFromProfits(profitsOf(Array.isArray(entries)?entries:[entries]));}
+  const recOf=d=>d.settlementId?state.br.settlements.find(x=>x.id===d.settlementId):null;
+  function recalcSettlement(sid){const rec=state.br.settlements.find(x=>x.id===sid);if(!rec)return;const entries=state.br.days.filter(d=>rec.entryIds.includes(d.id));if(!entries.length){state.br.settlements=state.br.settlements.filter(x=>x.id!==sid);return;}const c=settleCalc(entries);rec.entryIds=entries.map(d=>d.id);rec.amounts=c.amounts;rec.transfers=c.transfers;}
+  function unsettle(sid){state.br.days.forEach(d=>{if(d.settlementId===sid){d.settled=false;d.settledAt=null;delete d.settlementId;}});state.br.settlements=state.br.settlements.filter(x=>x.id!==sid);}
+  function transfersHtml(list){const u=esc(state.settings.unit);if(!list.length)return '<span class="none">精算なし（差し引き 0）</span>';return list.map(t=>`<span class="tr">${esc(t.fromName||pname(t.from))} → ${esc(t.toName||pname(t.to))} <b>${fmtN(t.amt)}</b> ${u}</span>`).join('');}
+  function brDays(){const idx=new Map(state.br.days.map((d,i)=>[d.id,i]));return state.br.days.slice().sort((a,b)=>b.date.localeCompare(a.date)||idx.get(a.id)-idx.get(b.id)).filter(d=>inPeriod(d.date,'12:00'));}
+  function brSeq(d){const same=state.br.days.filter(x=>x.date===d.date);if(same.length<2)return '';return ` <span class="cnt">${same.indexOf(d)+1}回目</span>`;}
+  function renderBrSummary(days){
+    const u=esc(state.settings.unit);
+    const pend=days.filter(d=>!d.settled);
+    const pendCalc=settleCalc(pend);
+    const recs=[...new Set(days.filter(d=>d.settled).map(d=>d.settlementId))].map(id=>state.br.settlements.find(x=>x.id===id)).filter(Boolean);
+    const tiles=state.br.players.map(pl=>{let tot=0,n=0;days.forEach(d=>{if(!hasVals(d,pl.id))return;n++;tot+=profitOf(d,pl.id);});
+      const settledAmt=recs.reduce((a,r)=>a+((r.amounts||{})[pl.id]||0),0);const pendAmt=pend.length?(pendCalc.amounts[pl.id]||0):0;const after=tot-settledAmt-pendAmt;
+      const pendTxt=pendAmt>0?`払う ${fmtN(pendAmt)}`:pendAmt<0?`もらう ${fmtN(-pendAmt)}`:'なし';
+      return `<div class="tile"><div class="lbl">${esc(pl.name)} の損益</div><div class="val num ${cls(tot)}">${fmtS(tot)}<small>${u}</small></div><div class="sub">精算後 <b class="${cls(after)}">${fmtS(after)}</b> · 未精算: ${pendTxt} · ${n}回</div></div>`;}).join('');
+    const pendTotal=pendCalc.transfers.reduce((a,t)=>a+t.amt,0);
+    const pairTxt=pend.length?(pendCalc.transfers.length?pendCalc.transfers.map(t=>`${esc(t.fromName)} → ${esc(t.toName)} <b>${fmtN(t.amt)}</b>`).join('<br>'):'差し引き 0'):'すべて精算済み';
+    const btn=pend.length?`<div class="tileact writer"><button type="button" class="small primary" id="settleAll">精算する（未精算 ${pend.length}回をまとめて）</button></div>`:'';
+    $('brSummary').innerHTML=tiles+`<div class="tile ${pend.length?'take':''}"><div class="lbl">未精算 ${pend.length}回 / ${days.length}回</div><div class="val num">${fmtN(pendTotal)}<small>${u}</small></div><div class="sub">${pairTxt}</div>${btn}</div>`;
+  }
+  function renderBrList(days){
+    const u=esc(state.settings.unit);
+    if(!days.length){$('brList').innerHTML='<div class="empty">まだ記録がありません。フォームに日付と各自のBRを入れてください。同じ日に何回でも追加できます。</div>';$('brFoot').textContent='';return;}
+    $('brList').innerHTML=days.map(d=>{
+      const ps=state.br.players.filter(p=>hasVals(d,p.id));
+      let tot=0;const rows=ps.map(pl=>{const v=d.vals[pl.id]||{};const p=profitOf(d,pl.id);tot+=p;return `<tr><td class="nm">${esc(pl.name)}</td><td class="r num">${fmtN(v.s||0)}</td><td class="r num">${v.r?fmtN(v.r):'–'}</td><td class="r num">${fmtN(v.e||0)}</td><td class="r num ${cls(p)}"><b>${fmtS(p)}</b></td></tr>`;}).join('');
+      const rec=recOf(d);const when=rec&&rec.at?new Date(rec.at):null;
+      const settleHtml=rec
+        ?`<span class="none">${rec.entryIds.length>1?rec.entryIds.length+'回分をまとめて精算: ':'精算: '}</span>${transfersHtml(rec.transfers||[])}<div class="ops writer"><button type="button" class="small" data-bact="unsettle" data-sid="${esc(rec.id)}">精算を取り消す</button></div>`
+        :(()=>{const c=settleCalc([d]);return `<span class="none">この回ぶん:</span>${transfersHtml(c.transfers)}<div class="ops writer"><button type="button" class="small primary" data-bact="settle">この回だけ精算</button></div>`;})();
+      return `<div class="brday ${d.settled?'settled':''}" data-id="${esc(d.id)}">
+        <div class="brhead"><span class="dt">${fmtD(d.date)}${brSeq(d)}</span>${d.settled?`<span class="chip ok">精算済み${when?' '+(when.getMonth()+1)+'/'+when.getDate():''}</span>`:'<span class="chip pend">未精算</span>'}
+          <div class="ops writer"><button type="button" class="small" data-bact="edit">編集</button><button type="button" class="small danger" data-bact="del">削除</button></div></div>
+        <table class="brt"><thead><tr><th></th><th class="r">開始BR</th><th class="r">リバイ</th><th class="r">終了BR</th><th class="r">損益</th></tr></thead><tbody>${rows}<tr class="tot"><td>合計</td><td></td><td></td><td></td><td class="r num ${cls(tot)}">${fmtS(tot)}</td></tr></tbody></table>
+        <div class="brsettle">${settleHtml}</div>
+      </div>`;}).join('');
+    $('brFoot').textContent=`全 ${state.br.days.length}回`;
+  }
+  function renderBr(){const days=brDays();renderBrSummary(days);renderBrList(days);}
+  function renderBrInputs(){
+    const cur=readBrVals();
+    $('brInputs').innerHTML=state.br.players.map(pl=>{const v=cur[pl.id]||{};return `<div class="prow" data-pid="${esc(pl.id)}"><div class="pname"><span>${esc(pl.name)}</span><span class="pp" data-pp>±0</span></div>
+      <label>開始BR<input type="number" class="ps" inputmode="numeric" step="1" value="${v.s??''}"></label><label>リバイ<input type="number" class="pr" inputmode="numeric" step="1" min="0" placeholder="0" value="${v.r||''}"></label><label>終了BR<input type="number" class="pe" inputmode="numeric" step="1" value="${v.e??''}"></label></div>`;}).join('');
+    updateBrHint();
+  }
+  function readBrVals(){const o={};$('brInputs').querySelectorAll('.prow').forEach(row=>{const s=row.querySelector('.ps').value,r=row.querySelector('.pr').value,e=row.querySelector('.pe').value;if(s===''&&e===''&&r==='')return;o[row.dataset.pid]={s:s===''?'':Number(s),r:Number(r)||0,e:e===''?'':Number(e)};});return o;}
+  function updateBrHint(){
+    const day={vals:readBrVals()};let tot=0;
+    $('brInputs').querySelectorAll('.prow').forEach(row=>{const pid=row.dataset.pid;const pp=row.querySelector('[data-pp]');if(hasVals(day,pid)){const p=profitOf(day,pid);tot+=p;pp.textContent=fmtS(p);pp.className='pp '+cls(p);}else{pp.textContent='—';pp.className='pp';}});
+    $('brHint').innerHTML=`合計 <b class="${cls(tot)}">${fmtS(tot)}</b>`;
+  }
+  $('brInputs').addEventListener('input',updateBrHint);
+  function brLoadDate(v){
+    const n=state.br.days.filter(x=>x.date===v).length;
+    if(!brEditing)$('brFormTitle').textContent=n?`セッションを追加（この日はもう${n}件あり）`:'セッションを追加';
+    updateBrHint();
+  }
+  function brFill(d){
+    $('brInputs').innerHTML=state.br.players.map(pl=>{const x=(d.vals||{})[pl.id]||{};return `<div class="prow" data-pid="${esc(pl.id)}"><div class="pname"><span>${esc(pl.name)}</span><span class="pp" data-pp>±0</span></div>
+      <label>開始BR<input type="number" class="ps" inputmode="numeric" step="1" value="${x.s??''}"></label><label>リバイ<input type="number" class="pr" inputmode="numeric" step="1" min="0" placeholder="0" value="${x.r||''}"></label><label>終了BR<input type="number" class="pe" inputmode="numeric" step="1" value="${x.e??''}"></label></div>`;}).join('');
+  }
+  function brReset(){brEditing=null;$('brPanel').classList.remove('sheet');if(!editingId&&!stEditing)document.body.classList.remove('editing');$('brInputs').innerHTML='';brCal.close();$('brFormTitle').textContent='セッションを追加';$('brFormMode').hidden=true;$('brSubmit').textContent='保存';$('brCancel').hidden=true;renderBrInputs();brCal.set(today());}
+  function brStartEdit(id){
+    const d=state.br.days.find(x=>x.id===id);if(!d){setStatus('この記録が見つかりません（再読み込みしてください）','err');return;}
+    brEditing=id;brCal.set(d.date);brFill(d);
+    $('brFormTitle').textContent='セッションを編集';$('brFormMode').hidden=false;$('brSubmit').textContent='更新して保存';$('brCancel').hidden=false;updateBrHint();
+    document.body.classList.add('editing');$('brPanel').classList.add('sheet');setStatus('編集中: '+d.date,'ok');
+    let wide=true;try{wide=window.matchMedia('(min-width:701px)').matches;}catch(_){}
+    if(wide){try{$('brPanel').scrollIntoView({behavior:'smooth',block:'start'});}catch(_){}}
+  }
+  $('brForm').addEventListener('submit',async ev=>{
+    ev.preventDefault();if(readOnly)return;
+    const date=brCal.get();const vals=readBrVals();
+    if(!Object.keys(vals).length){setStatus('誰かのBRを入れてください','warn');return;}
+    const d=brEditing?state.br.days.find(x=>x.id===brEditing):null;
+    if(d){d.date=date;d.vals=vals;if(d.settlementId)recalcSettlement(d.settlementId);}
+    else state.br.days.push({id:uid(),date,vals,settled:false,settledAt:null,transfers:[],amounts:{}});
+    if(!(isWeek(period)&&weekKeyOf(date,'12:00')===period.slice(2)))period=monthKey(date);brReset();render();await persist();
+  });
+  $('brCancel').addEventListener('click',brReset);
+  $('brList').addEventListener('click',async ev=>{
+    try{
+      const b=ev.target.closest('button[data-bact]');if(!b||readOnly)return;ev.preventDefault();
+      const act=b.dataset.bact;
+      if(act==='unsettle'){unsettle(b.dataset.sid);render();setStatus('精算を取り消しました','ok');await persist();return;}
+      const id=b.closest('.brday').dataset.id;const d=state.br.days.find(x=>x.id===id);if(!d)return;
+      if(act==='edit'){brStartEdit(id);return;}
+      if(act==='settle'){if(d.settled)return;const c=settleCalc([d]);const now=new Date().toISOString();const sid='s'+uid();state.br.settlements.push({id:sid,at:now,entryIds:[d.id],amounts:c.amounts,transfers:c.transfers});d.settled=true;d.settledAt=now;d.settlementId=sid;delete d.amounts;delete d.transfers;render();setStatus('この回を精算済みにしました','ok');await persist();return;}
+      if(act==='del'){const bk=d;state.br.days=state.br.days.filter(x=>x.id!==id);if(d.settlementId)recalcSettlement(d.settlementId);if(brEditing===id)brReset();render();
+        $('brFoot').innerHTML=`${esc(d.date)} の記録を消しました <button type="button" class="small" id="undoBrDel">元に戻す</button>`;lastBrDeleted=bk;await persist();return;}
+    }catch(e){setStatus('エラー: '+(e&&e.message||e),'err');}
+  });
+  document.addEventListener('click',async ev=>{
+    if(!ev.target.closest('#settleAll')||readOnly)return;
+    try{
+      const targets=brDays().filter(d=>!d.settled);if(!targets.length)return;
+      const c=settleCalc(targets);const now=new Date().toISOString();const sid='s'+uid();
+      state.br.settlements.push({id:sid,at:now,entryIds:targets.map(d=>d.id),amounts:c.amounts,transfers:c.transfers});
+      targets.forEach(d=>{d.settled=true;d.settledAt=now;d.settlementId=sid;delete d.amounts;delete d.transfers;});
+      render();setStatus(targets.length+'回分をまとめて精算しました','ok');await persist();
+    }catch(e){setStatus('エラー: '+(e&&e.message||e),'err');}
+  });
+  let lastBrDeleted=null;
+  document.addEventListener('click',async ev=>{if(!ev.target.closest('#undoBrDel')||!lastBrDeleted)return;state.br.days.push(lastBrDeleted);if(lastBrDeleted.settlementId){const r=state.br.settlements.find(x=>x.id===lastBrDeleted.settlementId);if(r){if(!r.entryIds.includes(lastBrDeleted.id))r.entryIds.push(lastBrDeleted.id);recalcSettlement(r.id);}else{lastBrDeleted.settled=false;delete lastBrDeleted.settlementId;}}lastBrDeleted=null;render();await persist();});
+  // players & rate settings
+  function renderPlayers(){
+    $('plist').innerHTML=state.br.players.map(pl=>`<div class="pl" data-pid="${esc(pl.id)}"><input type="text" class="pn" maxlength="16" value="${esc(pl.name)}" placeholder="名前"><button type="button" class="rm" aria-label="このプレイヤーを外す">×</button></div>`).join('');
+    $('brRate').innerHTML=RATE_STEPS.map(v=>`<option value="${v}">${v}%</option>`).join('');$('brRate').value=String(RATE_STEPS.includes(Number(state.br.rate))?Number(state.br.rate):100);
+  }
+  $('addPlayer').addEventListener('click',()=>{const row=document.createElement('div');row.className='pl';row.dataset.pid='p'+Date.now().toString(36);row.innerHTML='<input type="text" class="pn" maxlength="16" placeholder="名前"><button type="button" class="rm" aria-label="このプレイヤーを外す">×</button>';$('plist').appendChild(row);row.querySelector('.pn').focus();});
+  $('plist').addEventListener('click',ev=>{const b=ev.target.closest('.rm');if(!b)return;if($('plist').querySelectorAll('.pl').length<=1){setStatus('プレイヤーは1人以上必要です','warn');return;}b.closest('.pl').remove();});
+  $('savePlayers').addEventListener('click',async()=>{
+    if(readOnly)return;
+    const ps=[...$('plist').querySelectorAll('.pl')].map(r=>({id:r.dataset.pid,name:r.querySelector('.pn').value.trim()})).filter(p=>p.name);
+    if(!ps.length){setStatus('名前を入れてください','warn');return;}
+    state.br.players=ps;state.br.rate=Number($('brRate').value)||100;
+    renderPlayers();if(brEditing){const d=state.br.days.find(x=>x.id===brEditing);if(d)brFill(d);}else renderBrInputs();updateBrHint();render();await persist();
+  });
+  // tabs
+  function showTab(t){activeTab=t;$('tabRake').hidden=t!=='rake';$('tabBr').hidden=t!=='br';$('tabSt').hidden=t!=='st';$('tabBtnRake').classList.toggle('active',t==='rake');$('tabBtnBr').classList.toggle('active',t==='br');$('tabBtnSt').classList.toggle('active',t==='st');try{localStorage.setItem('ledgerTab',t);}catch(_){}}
+  document.querySelectorAll('.tab[data-tab]').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.tab)));
+
+  // ---------- staking ----------
+  let stEditing=null, lastStDeleted=null;
+  const stProfit=d=>(Number(d.e)||0)-(Number(d.s)||0)-(Number(d.r)||0);
+  const stBacker=d=>Math.round(stProfit(d)*(Number(d.rate)||0)/100);
+  const stMine=d=>stProfit(d)-stBacker(d);
+  function stDays(){const idx=new Map(state.st.days.map((d,i)=>[d.id,i]));return state.st.days.slice().sort((a,b)=>b.date.localeCompare(a.date)||idx.get(a.id)-idx.get(b.id)).filter(d=>inPeriod(d.date,'12:00'));}
+  function stSeq(d){const same=state.st.days.filter(x=>x.date===d.date);if(same.length<2)return '';return ` <span class="cnt">${same.indexOf(d)+1}回目</span>`;}
+  function stReadForm(){return{date:stCal.get(),s:Number($('stS').value)||0,r:Number($('stR').value)||0,e:Number($('stE').value)||0,rate:Number($('stRate').value)||0,who:$('stWho').value.trim(),memo:$('stMemo').value.trim()};}
+  function stUpdateHint(){const d=stReadForm();const p=stProfit(d);$('stHint').innerHTML=`損益: <b class="${cls(p)}">${fmtS(p)}</b>　相手 ${fmtS(stBacker(d))} / 自分 <b class="${cls(stMine(d))}">${fmtS(stMine(d))}</b>`;}
+  ['stS','stR','stE','stRate'].forEach(id=>{$(id).addEventListener('input',stUpdateHint);$(id).addEventListener('change',stUpdateHint);});
+  function stFillRate(val){$('stRate').innerHTML=SHARE_STEPS.map(v=>`<option value="${v}">${v}%</option>`).join('');const n=Number(val);$('stRate').value=String(SHARE_STEPS.includes(n)?n:Math.min(100,Math.max(0,Math.round(n/5)*5)));}
+  function stReset(){stEditing=null;$('stPanel').classList.remove('sheet');if(!editingId&&!brEditing)document.body.classList.remove('editing');$('stForm').reset();stCal.close();stCal.set(today());stFillRate(state.st.rate);$('stWho').value=state.st.who||'';
+    $('stFormTitle').textContent='セッションを追加';$('stFormMode').hidden=true;$('stSubmit').textContent='追加して保存';$('stCancel').hidden=true;stUpdateHint();}
+  function stStartEdit(id){const d=state.st.days.find(x=>x.id===id);if(!d)return;stEditing=id;stCal.set(d.date);$('stS').value=d.s??'';$('stR').value=d.r||'';$('stE').value=d.e??'';stFillRate(d.rate);$('stWho').value=d.who||'';$('stMemo').value=d.memo||'';
+    $('stFormTitle').textContent='セッションを編集';$('stFormMode').hidden=false;$('stSubmit').textContent='更新して保存';$('stCancel').hidden=false;stUpdateHint();
+    document.body.classList.add('editing');$('stPanel').classList.add('sheet');setStatus('編集中: '+d.date,'ok');
+    let wide=true;try{wide=window.matchMedia('(min-width:701px)').matches;}catch(_){}
+    if(wide){try{$('stPanel').scrollIntoView({behavior:'smooth',block:'start'});}catch(_){}}}
+  function renderStSummary(days){
+    const u=esc(state.settings.unit);let p=0,b=0,m=0,pend=0,pendN=0;
+    days.forEach(d=>{p+=stProfit(d);b+=stBacker(d);m+=stMine(d);if(!d.settled){pend+=stBacker(d);pendN++;}});
+    const pendTxt=pendN?(pend>0?`相手に渡す ${fmtN(pend)}`:pend<0?`相手からもらう ${fmtN(-pend)}`:'差し引き 0'):'すべて精算済み';
+    $('stSummary').innerHTML=`
+      <div class="tile"><div class="lbl">損益合計</div><div class="val num ${cls(p)}">${fmtS(p)}<small>${u}</small></div><div class="sub">${days.length}回 · ${periodLbl()}</div></div>
+      <div class="tile"><div class="lbl">相手の取り分</div><div class="val num ${cls(b)}">${fmtS(b)}<small>${u}</small></div><div class="sub">損益 × ステーキング割合</div></div>
+      <div class="tile take"><div class="lbl">自分の取り分</div><div class="val num ${cls(m)}">${fmtS(m)}<small>${u}</small></div><div class="sub">損益 − 相手の取り分</div></div>
+      <div class="tile ${pendN?'take':''}"><div class="lbl">未精算 ${pendN}回</div><div class="val num">${fmtN(Math.abs(pend))}<small>${u}</small></div><div class="sub">${pendTxt}</div>${pendN?'<div class="tileact writer"><button type="button" class="small primary" id="stSettleAll">まとめて精算済みにする</button></div>':''}</div>`;
+  }
+  function renderStList(days){
+    const u=esc(state.settings.unit);
+    if(!days.length){$('stList').innerHTML='<div class="empty">まだ記録がありません。フォームに開始・終了BRとステーキング割合を入れてください。</div>';$('stFoot').textContent='';return;}
+    $('stList').innerHTML=days.map(d=>{const p=stProfit(d),b=stBacker(d),m=stMine(d);const when=d.settledAt?new Date(d.settledAt):null;
+      return `<div class="brday ${d.settled?'settled':''}" data-id="${esc(d.id)}">
+        <div class="brhead"><span class="dt">${fmtD(d.date)}${stSeq(d)}</span>${d.settled?`<span class="chip ok">精算済み${when?' '+(when.getMonth()+1)+'/'+when.getDate():''}</span>`:'<span class="chip pend">未精算</span>'}<span class="none" style="font-size:12px;color:var(--muted)">${esc(d.who||'')} ${Number(d.rate)}%</span>
+          <div class="ops writer"><button type="button" class="small" data-sact="edit">編集</button><button type="button" class="small danger" data-sact="del">削除</button></div></div>
+        <div class="stt"><div><span class="k">開始BR</span><span class="v">${fmtN(d.s||0)}</span></div><div><span class="k">リバイ</span><span class="v">${d.r?fmtN(d.r):'–'}</span></div><div><span class="k">終了BR</span><span class="v">${fmtN(d.e||0)}</span></div>
+          <div><span class="k">損益</span><span class="v ${cls(p)}">${fmtS(p)}</span></div><div><span class="k">相手 ${Number(d.rate)}%</span><span class="v ${cls(b)}">${fmtS(b)}</span></div><div><span class="k">自分</span><span class="v ${cls(m)}">${fmtS(m)}</span></div></div>
+        ${d.memo?`<div class="hint" style="margin-top:6px">${esc(d.memo)}</div>`:''}
+        <div class="brsettle"><span class="none">${b>0?'相手に渡す '+fmtN(b):b<0?'相手からもらう '+fmtN(-b):'精算なし'} ${u}</span><div class="ops writer">${d.settled?'<button type="button" class="small" data-sact="unsettle">精算を取り消す</button>':'<button type="button" class="small primary" data-sact="settle">精算済みにする</button>'}</div></div>
+      </div>`;}).join('');
+    $('stFoot').textContent=`全 ${state.st.days.length}回`;
+  }
+  function renderSt(){const days=stDays();renderStSummary(days);renderStList(days);}
+  $('stForm').addEventListener('submit',async ev=>{
+    ev.preventDefault();if(readOnly)return;
+    const f=stReadForm();if(!f.date)return;
+    if(stEditing){const d=state.st.days.find(x=>x.id===stEditing);if(d)Object.assign(d,f);}
+    else state.st.days.push(Object.assign({id:uid(),settled:false,settledAt:null},f));
+    state.st.rate=f.rate;state.st.who=f.who;
+    if(!(isWeek(period)&&weekKeyOf(f.date,'12:00')===period.slice(2)))period=monthKey(f.date);
+    stReset();render();await persist();
+  });
+  $('stCancel').addEventListener('click',stReset);
+  $('stList').addEventListener('click',async ev=>{
+    try{
+      const b=ev.target.closest('button[data-sact]');if(!b||readOnly)return;ev.preventDefault();
+      const id=b.closest('.brday').dataset.id;const d=state.st.days.find(x=>x.id===id);if(!d)return;
+      const act=b.dataset.sact;
+      if(act==='edit'){stStartEdit(id);return;}
+      if(act==='del'){lastStDeleted=d;state.st.days=state.st.days.filter(x=>x.id!==id);if(stEditing===id)stReset();render();$('stFoot').innerHTML=`${esc(d.date)} の記録を消しました <button type="button" class="small" id="undoStDel">元に戻す</button>`;await persist();return;}
+      if(act==='settle'){d.settled=true;d.settledAt=new Date().toISOString();render();await persist();return;}
+      if(act==='unsettle'){d.settled=false;d.settledAt=null;render();await persist();return;}
+    }catch(e){setStatus('エラー: '+(e&&e.message||e),'err');}
+  });
+  document.addEventListener('click',async ev=>{
+    if(ev.target.closest('#undoStDel')&&lastStDeleted){state.st.days.push(lastStDeleted);lastStDeleted=null;render();await persist();return;}
+    if(ev.target.closest('#stSettleAll')&&!readOnly){const now=new Date().toISOString();stDays().filter(d=>!d.settled).forEach(d=>{d.settled=true;d.settledAt=now;});render();setStatus('まとめて精算済みにしました','ok');await persist();}
+  });
+  const stCal=makeCal({hidden:'sDate',btn:'sDateBtn',label:'sDateLabel',cal:'sCal',prev:'sCalPrev',next:'sCalNext',title:'sCalTitle',grid:'sCalGrid',today:'sCalToday',yest:'sCalYesterday'},{onChange:()=>{const n=state.st.days.filter(x=>x.date===stCal.get()).length;if(!stEditing)$('stFormTitle').textContent=n?`セッションを追加（この日はもう${n}件あり）`:'セッションを追加';},hasDates:()=>new Set(state.st.days.map(d=>d.date))});
+
+  const rakeCal=makeCal({hidden:'fDate',btn:'dateBtn',label:'dateLabel',cal:'cal',prev:'calPrev',next:'calNext',title:'calTitle',grid:'calGrid',today:'calToday',yest:'calYesterday'},{onChange:()=>updateHints(),hasDates:()=>new Set(state.rows.map(r=>r.date))});
+  const brCal=makeCal({hidden:'bDate',btn:'bDateBtn',label:'bDateLabel',cal:'bCal',prev:'bCalPrev',next:'bCalNext',title:'bCalTitle',grid:'bCalGrid',today:'bCalToday',yest:'bCalYesterday'},{onChange:v=>brLoadDate(v),hasDates:()=>new Set(state.br.days.map(d=>d.date))});
+
+  // ---------- home screen helper ----------
+  let deferredInstall=null;
+  $('pageUrl').value=location.href.split('#')[0];
+  $('homeBtn').addEventListener('click',async()=>{
+    if(deferredInstall){try{deferredInstall.prompt();const r=await deferredInstall.userChoice;if(r&&r.outcome==='accepted'){setStatus('ホーム画面に追加しました','ok');deferredInstall=null;return;}}catch(_){}}
+    $('homeModal').hidden=false;$('copyMsg').textContent='';
+  });
+  $('homeClose').addEventListener('click',()=>{$('homeModal').hidden=true;});
+  $('homeModal').addEventListener('click',ev=>{if(ev.target===$('homeModal'))$('homeModal').hidden=true;});
+  $('copyUrl').addEventListener('click',async()=>{
+    const url=$('pageUrl').value;let ok=false;
+    try{await navigator.clipboard.writeText(url);ok=true;}catch(_){try{$('pageUrl').select();ok=document.execCommand('copy');}catch(__){}}
+    $('copyMsg').textContent=ok?'コピーしました。ブラウザで貼り付けて開いてください':'コピーできませんでした。上の欄を長押しして選択・コピーしてください';
+  });
+  window.addEventListener('beforeinstallprompt',ev=>{ev.preventDefault();deferredInstall=ev;$('homeBtn').textContent='📱 ホーム画面に追加（ワンタップ）';});
+  if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}
+
+  // ---------- init ----------
+  fillShare($('sShare'),state.settings.share);$('sUnit').value=state.settings.unit;
+  renderPlayers();renderBrInputs();brCal.set(today());stFillRate(state.st.rate);stReset();
+  resetForm();render();
+  let savedTab='rake';try{savedTab=localStorage.getItem('ledgerTab')||'rake';}catch(_){}showTab(savedTab==='br'?'br':savedTab==='st'?'st':'rake');
+  window.addEventListener('error',ev=>{try{setStatus('エラー: '+(ev.message||'unknown'),'err');}catch(_){}});
+  setStatus('接続中…');
+  try{
+    if(!window.FIREBASE_CONFIG||!window.FIREBASE_CONFIG.databaseURL)throw new Error('設定がありません');
+    firebase.initializeApp(window.FIREBASE_CONFIG);
+    dbRef=firebase.database().ref('ledger');
+    dbRef.on('value',snap=>{
+      const v=snap.val();
+      if(v===null){setStatus('接続しました（データなし）','ok');return;}
+      applyRemote(v);
+      const upd=v.updated?new Date(v.updated):null;
+      setStatus('共有中 · 最終更新 '+(upd?(upd.getMonth()+1)+'/'+upd.getDate()+' '+String(upd.getHours()).padStart(2,'0')+':'+String(upd.getMinutes()).padStart(2,'0'):''),'ok');
+    },err=>{setStatus('読み込みエラー: '+(err&&err.message||err),'err');});
+    firebase.database().ref('.info/connected').on('value',snap=>{if(snap.val()===false)setStatus('オフライン（再接続待ち）','warn');});
+  }catch(e){setStatus('データベース設定エラー: '+(e&&e.message||e),'err');}
+})();
+</script>
+
+</body>
+</html>
