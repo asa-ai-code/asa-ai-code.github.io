@@ -127,6 +127,13 @@ select:focus-visible,input:focus-visible,button:focus-visible{outline:2px solid 
 .form{display:grid;gap:12px}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.tabs{overflow-x:auto;scrollbar-width:none}
+.tab{white-space:nowrap;flex:none}
+@media (max-width:480px){.tab{padding:8px 9px;font-size:14px}}
+#meSummary .tile.take .val.pos{color:var(--accent)}
+#meSummary .tile.take .val.neg{color:var(--danger)}
+.metbl td.v{font-family:"IBM Plex Mono",monospace;font-weight:600}
+.metbl td.cum{font-family:"IBM Plex Mono",monospace;color:var(--muted)}
 .stt{display:grid;grid-template-columns:repeat(3,1fr);gap:6px 10px;margin-top:6px}
 .stt div{font-size:13px}
 .stt .k{font-size:10px;color:var(--muted);letter-spacing:.06em;display:block}
@@ -267,6 +274,7 @@ tr.data td.writer .ops button{min-height:32px;padding:4px 12px}
     <button type="button" class="tab active" role="tab" data-tab="rake" id="tabBtnRake">レーキ台帳</button>
     <button type="button" class="tab" role="tab" data-tab="br" id="tabBtnBr">バンクロール</button>
     <button type="button" class="tab" role="tab" data-tab="st" id="tabBtnSt">ステーキング</button>
+    <button type="button" class="tab" role="tab" data-tab="me" id="tabBtnMe">自分</button>
   </div>
 
   <div id="tabBr" hidden>
@@ -357,6 +365,12 @@ tr.data td.writer .ops button{min-height:32px;padding:4px 12px}
         <div class="foot"><span id="stFoot"></span></div>
       </section>
     </div>
+  </div>
+
+  <div id="tabMe" hidden>
+    <section class="summary" id="meSummary" aria-label="自分の収支"></section>
+    <div id="meList"></div>
+    <div class="foot"><span id="meFoot"></span></div>
   </div>
 
   <div class="modal" id="homeModal" hidden role="dialog" aria-label="ホーム画面に追加">
@@ -573,7 +587,7 @@ tr.data td.writer .ops button{min-height:32px;padding:4px 12px}
     tb.innerHTML=html;
   }
   function render(){
-    renderPeriod();const rows=visibleRows();renderSummary(rows);renderTable(rows);renderBr();renderSt();
+    renderPeriod();const rows=visibleRows();renderSummary(rows);renderTable(rows);renderBr();renderSt();renderMe();
     document.querySelectorAll('.unitLbl').forEach(el=>el.textContent=state.settings.unit);
     $('exampleOps').hidden=!state.rows.some(r=>r.example);
     const upd=DATA.updated?new Date(DATA.updated):null;
@@ -829,7 +843,7 @@ tr.data td.writer .ops button{min-height:32px;padding:4px 12px}
     renderPlayers();if(brEditing){const d=state.br.days.find(x=>x.id===brEditing);if(d)brFill(d);}else renderBrInputs();updateBrHint();render();await persist();
   });
   // tabs
-  function showTab(t){activeTab=t;$('tabRake').hidden=t!=='rake';$('tabBr').hidden=t!=='br';$('tabSt').hidden=t!=='st';$('tabBtnRake').classList.toggle('active',t==='rake');$('tabBtnBr').classList.toggle('active',t==='br');$('tabBtnSt').classList.toggle('active',t==='st');try{localStorage.setItem('ledgerTab',t);}catch(_){}}
+  function showTab(t){activeTab=t;$('tabRake').hidden=t!=='rake';$('tabBr').hidden=t!=='br';$('tabSt').hidden=t!=='st';$('tabMe').hidden=t!=='me';$('tabBtnRake').classList.toggle('active',t==='rake');$('tabBtnBr').classList.toggle('active',t==='br');$('tabBtnSt').classList.toggle('active',t==='st');$('tabBtnMe').classList.toggle('active',t==='me');try{localStorage.setItem('ledgerTab',t);}catch(_){}}
   document.querySelectorAll('.tab[data-tab]').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.tab)));
 
   // ---------- staking ----------
@@ -875,6 +889,23 @@ tr.data td.writer .ops button{min-height:32px;padding:4px 12px}
     $('stFoot').textContent=`全 ${state.st.days.length}回`;
   }
   function renderSt(){const days=stDays();renderStSummary(days);renderStList(days);}
+  // ---------- 自分（ステーキングの自分の取り分だけ） ----------
+  function renderMe(){
+    const u=esc(state.settings.unit);const days=stDays();
+    let m=0,win=0,lose=0,best=null,worst=null;
+    days.forEach(d=>{const v=stMine(d);m+=v;if(v>0)win++;else if(v<0)lose++;if(best===null||v>best)best=v;if(worst===null||v<worst)worst=v;});
+    const n=days.length,avg=n?Math.round(m/n):0;
+    let all=0;state.st.days.forEach(d=>{all+=stMine(d);});
+    $('meSummary').innerHTML=`
+      <div class="tile take"><div class="lbl">自分の収支</div><div class="val num ${cls(m)}">${fmtS(m)}<small>${u}</small></div><div class="sub">${n}回 · ${periodLbl()}</div></div>
+      <div class="tile"><div class="lbl">1回あたり</div><div class="val num ${cls(avg)}">${n?fmtS(avg):'—'}<small>${n?u:''}</small></div><div class="sub">勝ち <b class="pos">${win}</b> · 負け <b class="neg">${lose}</b>${n-win-lose?` · ±0 <b>${n-win-lose}</b>`:''}</div></div>
+      <div class="tile"><div class="lbl">いちばん勝った回</div><div class="val num ${cls(best||0)}">${n?fmtS(best):'—'}<small>${n?u:''}</small></div><div class="sub">いちばん負けた回 <b class="${cls(worst||0)}">${n?fmtS(worst):'—'}</b></div></div>
+      <div class="tile"><div class="lbl">全期間の自分の収支</div><div class="val num ${cls(all)}">${fmtS(all)}<small>${u}</small></div><div class="sub">全 ${state.st.days.length}回</div></div>`;
+    if(!n){$('meList').innerHTML='<div class="empty">この期間のステーキングの記録はありません。</div>';$('meFoot').textContent='';return;}
+    const asc=days.slice().reverse();let run=0;const cum=new Map();asc.forEach(d=>{run+=stMine(d);cum.set(d.id,run);});
+    $('meList').innerHTML=`<div class="brday"><table class="brt metbl"><thead><tr><th>日付</th><th class="r">自分</th><th class="r">累計</th></tr></thead><tbody>${days.map(d=>{const v=stMine(d),c=cum.get(d.id);return `<tr><td class="nm">${fmtD(d.date)}${stSeq(d)}</td><td class="r v ${cls(v)}">${fmtS(v)}</td><td class="r cum">${fmtS(c)}</td></tr>`;}).join('')}<tr class="tot"><td>合計</td><td class="r v ${cls(m)}">${fmtS(m)}</td><td></td></tr></tbody></table></div>`;
+    $('meFoot').textContent='ステーキングの「自分」の取り分（損益 − 相手の取り分）だけを表示しています。入力・編集はステーキングタブから。';
+  }
   $('stForm').addEventListener('submit',async ev=>{
     ev.preventDefault();if(readOnly)return;
     const f=stReadForm();if(!f.date)return;
@@ -926,7 +957,7 @@ tr.data td.writer .ops button{min-height:32px;padding:4px 12px}
   fillShare($('sShare'),state.settings.share);$('sUnit').value=state.settings.unit;
   renderPlayers();renderBrInputs();brCal.set(today());stFillRate(state.st.rate);stReset();
   resetForm();render();
-  let savedTab='rake';try{savedTab=localStorage.getItem('ledgerTab')||'rake';}catch(_){}showTab(savedTab==='br'?'br':savedTab==='st'?'st':'rake');
+  let savedTab='rake';try{savedTab=localStorage.getItem('ledgerTab')||'rake';}catch(_){}showTab(['br','st','me'].includes(savedTab)?savedTab:'rake');
   window.addEventListener('error',ev=>{try{setStatus('エラー: '+(ev.message||'unknown'),'err');}catch(_){}});
   setStatus('接続中…');
   try{
