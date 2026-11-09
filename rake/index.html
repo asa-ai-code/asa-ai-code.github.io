@@ -132,6 +132,12 @@ select:focus-visible,input:focus-visible,button:focus-visible{outline:2px solid 
 .tab{white-space:nowrap;flex:none}
 @media (max-width:480px){.tab{padding:8px 9px;font-size:14px}}
 @media (max-width:700px){#meSummary .tile:last-child:nth-child(odd){grid-column:1/-1}}
+.melock{max-width:360px}
+.melock input{width:100%;font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:7px 10px;min-height:38px}
+.melock input:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+.metbl td.rbc{padding-top:3px;padding-bottom:3px}
+.metbl input.rbin{width:92px;min-height:32px;padding:4px 8px;text-align:right}
+@media (max-width:480px){.metbl input.rbin{width:76px}}
 #meSummary .tile.take .val.pos{color:var(--accent)}
 #meSummary .tile.take .val.neg{color:var(--danger)}
 .metbl td.v{font-family:"IBM Plex Mono",monospace;font-weight:600}
@@ -344,10 +350,6 @@ tr.data td.writer .ops button{min-height:32px;padding:4px 12px}
               <div class="calfoot"><button type="button" class="small" id="sCalToday">今日</button><button type="button" class="small" id="sCalYesterday">昨日</button></div>
             </div>
           </div>
-          <div class="row2">
-            <label class="f">開始時刻<input type="time" id="stStart"></label>
-            <label class="f">終了時刻<input type="time" id="stEnd"></label>
-          </div>
           <div class="row3">
             <label class="f">開始BR<input type="number" id="stS" inputmode="numeric" step="1" required></label>
             <label class="f">リバイ<input type="number" id="stR" inputmode="numeric" step="1" min="0" placeholder="0"></label>
@@ -374,9 +376,19 @@ tr.data td.writer .ops button{min-height:32px;padding:4px 12px}
   </div>
 
   <div id="tabMe" hidden>
-    <section class="summary" id="meSummary" aria-label="自分の収支"></section>
-    <div id="meList"></div>
-    <div class="foot"><span id="meFoot"></span></div>
+    <form class="panel melock" id="meLock" autocomplete="off">
+      <h2>パスワードを入力</h2>
+      <div class="form">
+        <input type="password" id="mePw" inputmode="numeric" aria-label="パスワード" placeholder="パスワード">
+        <div class="hint" id="mePwMsg">このタブはパスワードで保護されています。</div>
+        <div class="actions"><button type="submit" class="primary">開く</button></div>
+      </div>
+    </form>
+    <div id="meBody" hidden>
+      <section class="summary" id="meSummary" aria-label="自分の収支"></section>
+      <div id="meList"></div>
+      <div class="foot"><span id="meFoot"></span><button type="button" class="small" id="meLockBtn">ロックする</button></div>
+    </div>
   </div>
 
   <div class="modal" id="homeModal" hidden role="dialog" aria-label="ホーム画面に追加">
@@ -857,17 +869,15 @@ tr.data td.writer .ops button{min-height:32px;padding:4px 12px}
   const stProfit=d=>(Number(d.e)||0)-(Number(d.s)||0)-(Number(d.r)||0);
   const stBacker=d=>Math.round(stProfit(d)*(Number(d.rate)||0)/100);
   const stMine=d=>stProfit(d)-stBacker(d);
-  const stHours=d=>(d&&d.start&&d.end)?hoursOf(d):null;
-  const stSpan=d=>stHours(d)===null?'':`${esc(d.start)}–${esc(d.end)} · ${fmtH(stHours(d))}`;
   function stDays(){const idx=new Map(state.st.days.map((d,i)=>[d.id,i]));return state.st.days.slice().sort((a,b)=>b.date.localeCompare(a.date)||idx.get(a.id)-idx.get(b.id)).filter(d=>inPeriod(d.date,'12:00'));}
   function stSeq(d){const same=state.st.days.filter(x=>x.date===d.date);if(same.length<2)return '';return ` <span class="cnt">${same.indexOf(d)+1}回目</span>`;}
-  function stReadForm(){return{date:stCal.get(),start:$('stStart').value||'',end:$('stEnd').value||'',s:Number($('stS').value)||0,r:Number($('stR').value)||0,e:Number($('stE').value)||0,rate:Number($('stRate').value)||0,who:$('stWho').value.trim(),memo:$('stMemo').value.trim()};}
-  function stUpdateHint(){const d=stReadForm();const p=stProfit(d);const h=stHours(d);$('stHint').innerHTML=`${h!==null?`稼働: <b>${fmtH(h)}</b>　`:''}損益: <b class="${cls(p)}">${fmtS(p)}</b>　相手 ${fmtS(stBacker(d))} / 自分 <b class="${cls(stMine(d))}">${fmtS(stMine(d))}</b>`;}
-  ['stS','stR','stE','stRate','stStart','stEnd'].forEach(id=>{$(id).addEventListener('input',stUpdateHint);$(id).addEventListener('change',stUpdateHint);});
+  function stReadForm(){return{date:stCal.get(),s:Number($('stS').value)||0,r:Number($('stR').value)||0,e:Number($('stE').value)||0,rate:Number($('stRate').value)||0,who:$('stWho').value.trim(),memo:$('stMemo').value.trim()};}
+  function stUpdateHint(){const d=stReadForm();const p=stProfit(d);$('stHint').innerHTML=`損益: <b class="${cls(p)}">${fmtS(p)}</b>　相手 ${fmtS(stBacker(d))} / 自分 <b class="${cls(stMine(d))}">${fmtS(stMine(d))}</b>`;}
+  ['stS','stR','stE','stRate'].forEach(id=>{$(id).addEventListener('input',stUpdateHint);$(id).addEventListener('change',stUpdateHint);});
   function stFillRate(val){$('stRate').innerHTML=SHARE_STEPS.map(v=>`<option value="${v}">${v}%</option>`).join('');const n=Number(val);$('stRate').value=String(SHARE_STEPS.includes(n)?n:Math.min(100,Math.max(0,Math.round(n/5)*5)));}
   function stReset(){stEditing=null;$('stPanel').classList.remove('sheet');if(!editingId&&!brEditing)document.body.classList.remove('editing');$('stForm').reset();stCal.close();stCal.set(today());stFillRate(state.st.rate);$('stWho').value=state.st.who||'';
     $('stFormTitle').textContent='セッションを追加';$('stFormMode').hidden=true;$('stSubmit').textContent='追加して保存';$('stCancel').hidden=true;stUpdateHint();}
-  function stStartEdit(id){const d=state.st.days.find(x=>x.id===id);if(!d)return;stEditing=id;stCal.set(d.date);$('stStart').value=d.start||'';$('stEnd').value=d.end||'';$('stS').value=d.s??'';$('stR').value=d.r||'';$('stE').value=d.e??'';stFillRate(d.rate);$('stWho').value=d.who||'';$('stMemo').value=d.memo||'';
+  function stStartEdit(id){const d=state.st.days.find(x=>x.id===id);if(!d)return;stEditing=id;stCal.set(d.date);$('stS').value=d.s??'';$('stR').value=d.r||'';$('stE').value=d.e??'';stFillRate(d.rate);$('stWho').value=d.who||'';$('stMemo').value=d.memo||'';
     $('stFormTitle').textContent='セッションを編集';$('stFormMode').hidden=false;$('stSubmit').textContent='更新して保存';$('stCancel').hidden=false;stUpdateHint();
     document.body.classList.add('editing');$('stPanel').classList.add('sheet');setStatus('編集中: '+d.date,'ok');
     let wide=true;try{wide=window.matchMedia('(min-width:701px)').matches;}catch(_){}
@@ -887,7 +897,7 @@ tr.data td.writer .ops button{min-height:32px;padding:4px 12px}
     if(!days.length){$('stList').innerHTML='<div class="empty">まだ記録がありません。フォームに開始・終了BRとステーキング割合を入れてください。</div>';$('stFoot').textContent='';return;}
     $('stList').innerHTML=days.map(d=>{const p=stProfit(d),b=stBacker(d),m=stMine(d);const when=d.settledAt?new Date(d.settledAt):null;
       return `<div class="brday ${d.settled?'settled':''}" data-id="${esc(d.id)}">
-        <div class="brhead"><span class="dt">${fmtD(d.date)}${stSeq(d)}</span>${d.settled?`<span class="chip ok">精算済み${when?' '+(when.getMonth()+1)+'/'+when.getDate():''}</span>`:'<span class="chip pend">未精算</span>'}<span class="none" style="font-size:12px;color:var(--muted)">${stSpan(d)?stSpan(d)+' · ':''}${esc(d.who||'')} ${Number(d.rate)}%</span>
+        <div class="brhead"><span class="dt">${fmtD(d.date)}${stSeq(d)}</span>${d.settled?`<span class="chip ok">精算済み${when?' '+(when.getMonth()+1)+'/'+when.getDate():''}</span>`:'<span class="chip pend">未精算</span>'}<span class="none" style="font-size:12px;color:var(--muted)">${esc(d.who||'')} ${Number(d.rate)}%</span>
           <div class="ops writer"><button type="button" class="small" data-sact="edit">編集</button><button type="button" class="small danger" data-sact="del">削除</button></div></div>
         <div class="stt"><div><span class="k">開始BR</span><span class="v">${fmtN(d.s||0)}</span></div><div><span class="k">リバイ</span><span class="v">${d.r?fmtN(d.r):'–'}</span></div><div><span class="k">終了BR</span><span class="v">${fmtN(d.e||0)}</span></div>
           <div><span class="k">損益</span><span class="v ${cls(p)}">${fmtS(p)}</span></div><div><span class="k">相手 ${Number(d.rate)}%</span><span class="v ${cls(b)}">${fmtS(b)}</span></div><div><span class="k">自分</span><span class="v ${cls(m)}">${fmtS(m)}</span></div></div>
@@ -898,25 +908,44 @@ tr.data td.writer .ops button{min-height:32px;padding:4px 12px}
   }
   function renderSt(){const days=stDays();renderStSummary(days);renderStList(days);}
   // ---------- 自分（ステーキングの自分の取り分だけ） ----------
+  const stRb=d=>Number(d.rb)||0;
   function renderMe(){
     const u=esc(state.settings.unit);const days=stDays();
-    let m=0,win=0,lose=0,best=null,worst=null;
-    days.forEach(d=>{const v=stMine(d);m+=v;if(v>0)win++;else if(v<0)lose++;if(best===null||v>best)best=v;if(worst===null||v<worst)worst=v;});
-    const n=days.length,avg=n?Math.round(m/n):0;
-    let all=0;state.st.days.forEach(d=>{all+=stMine(d);});
-    let hh=0,hm=0,hn=0;days.forEach(d=>{const h=stHours(d);if(h!==null){hh+=h;hm+=stMine(d);hn++;}});
-    const rate=hh>0?Math.round(hm/hh):null;
+    let m=0,rb=0,rbn=0,win=0,lose=0,best=null,worst=null;
+    days.forEach(d=>{const v=stMine(d);m+=v;if(d.rb!==undefined&&d.rb!==null&&d.rb!==''){rb+=stRb(d);rbn++;}if(v>0)win++;else if(v<0)lose++;if(best===null||v>best)best=v;if(worst===null||v<worst)worst=v;});
+    const n=days.length,both=m+rb;
+    let all=0,allRb=0;state.st.days.forEach(d=>{all+=stMine(d);allRb+=stRb(d);});
     $('meSummary').innerHTML=`
       <div class="tile take"><div class="lbl">自分の収支</div><div class="val num ${cls(m)}">${fmtS(m)}<small>${u}</small></div><div class="sub">${n}回 · ${periodLbl()}</div></div>
-      <div class="tile"><div class="lbl">1回あたり</div><div class="val num ${cls(avg)}">${n?fmtS(avg):'—'}<small>${n?u:''}</small></div><div class="sub">勝ち <b class="pos">${win}</b> · 負け <b class="neg">${lose}</b>${n-win-lose?` · ±0 <b>${n-win-lose}</b>`:''}</div></div>
-      <div class="tile"><div class="lbl">稼働時間</div><div class="val num">${hn?fmtH(hh):'—'}</div><div class="sub">${rate!==null?`時給 <b class="${cls(rate)}">${fmtS(rate)}</b> ${u}/h`:'時刻を入れると時給が出ます'}${hn&&hn<n?` · 時刻あり ${hn}/${n}回`:''}</div></div>
-      <div class="tile"><div class="lbl">いちばん勝った回</div><div class="val num ${cls(best||0)}">${n?fmtS(best):'—'}<small>${n?u:''}</small></div><div class="sub">いちばん負けた回 <b class="${cls(worst||0)}">${n?fmtS(worst):'—'}</b></div></div>
-      <div class="tile"><div class="lbl">全期間の自分の収支</div><div class="val num ${cls(all)}">${fmtS(all)}<small>${u}</small></div><div class="sub">全 ${state.st.days.length}回</div></div>`;
+      <div class="tile"><div class="lbl">レーキバック合計</div><div class="val num ${cls(rb)}">${fmtS(rb)}<small>${u}</small></div><div class="sub">入力済み ${rbn}/${n}回</div></div>
+      <div class="tile"><div class="lbl">バック込みの収支</div><div class="val num ${cls(both)}">${fmtS(both)}<small>${u}</small></div><div class="sub">1回あたり <b class="${cls(n?both/n:0)}">${n?fmtS(Math.round(both/n)):'—'}</b></div></div>
+      <div class="tile"><div class="lbl">いちばん勝った回</div><div class="val num ${cls(best||0)}">${n?fmtS(best):'—'}<small>${n?u:''}</small></div><div class="sub">いちばん負けた回 <b class="${cls(worst||0)}">${n?fmtS(worst):'—'}</b> · 勝ち <b class="pos">${win}</b> 負け <b class="neg">${lose}</b></div></div>
+      <div class="tile"><div class="lbl">全期間の自分の収支</div><div class="val num ${cls(all)}">${fmtS(all)}<small>${u}</small></div><div class="sub">バック込み <b class="${cls(all+allRb)}">${fmtS(all+allRb)}</b> · 全 ${state.st.days.length}回</div></div>`;
     if(!n){$('meList').innerHTML='<div class="empty">この期間のステーキングの記録はありません。</div>';$('meFoot').textContent='';return;}
-    const asc=days.slice().reverse();let run=0;const cum=new Map();asc.forEach(d=>{run+=stMine(d);cum.set(d.id,run);});
-    $('meList').innerHTML=`<div class="brday"><table class="brt metbl"><thead><tr><th>日付</th><th class="r">稼働</th><th class="r">自分</th><th class="r">累計</th></tr></thead><tbody>${days.map(d=>{const v=stMine(d),c=cum.get(d.id);const h=stHours(d);return `<tr><td class="nm">${fmtD(d.date)}${stSeq(d)}</td><td class="r cum">${h===null?'–':fmtH(h)}</td><td class="r v ${cls(v)}">${fmtS(v)}</td><td class="r cum">${fmtS(c)}</td></tr>`;}).join('')}<tr class="tot"><td>合計</td><td class="r cum">${hn?fmtH(hh):''}</td><td class="r v ${cls(m)}">${fmtS(m)}</td><td></td></tr></tbody></table></div>`;
-    $('meFoot').textContent='ステーキングの「自分」の取り分（損益 − 相手の取り分）だけを表示しています。入力・編集はステーキングタブから。';
+    const asc=days.slice().reverse();let run=0;const cum=new Map();asc.forEach(d=>{run+=stMine(d)+stRb(d);cum.set(d.id,run);});
+    const ae=document.activeElement;if(ae&&ae.classList&&ae.classList.contains('rbin')&&$('meList').contains(ae))return;
+    const rbCell=d=>readOnly?`<td class="r v ${cls(stRb(d))}">${d.rb===undefined||d.rb===''||d.rb===null?'–':fmtS(stRb(d))}</td>`:`<td class="r rbc"><input type="number" class="rbin" data-id="${esc(d.id)}" inputmode="numeric" step="1" placeholder="0" value="${d.rb===undefined||d.rb===null?'':esc(String(d.rb))}" aria-label="${esc(d.date)} のレーキバック"></td>`;
+    $('meList').innerHTML=`<div class="brday"><table class="brt metbl"><thead><tr><th>日付</th><th class="r">自分</th><th class="r">バック</th><th class="r">累計 込み</th></tr></thead><tbody>${days.map(d=>{const v=stMine(d),c=cum.get(d.id);return `<tr><td class="nm">${fmtD(d.date)}${stSeq(d)}</td><td class="r v ${cls(v)}">${fmtS(v)}</td>${rbCell(d)}<td class="r cum">${fmtS(c)}</td></tr>`;}).join('')}<tr class="tot"><td>合計</td><td class="r v ${cls(m)}">${fmtS(m)}</td><td class="r v ${cls(rb)}">${fmtS(rb)}</td><td class="r v ${cls(both)}">${fmtS(both)}</td></tr></tbody></table></div>`;
+    $('meFoot').textContent='自分＝ステーキングの損益 − 相手の取り分。バックの欄はここで直接入力でき、入力して欄を離れると保存されます。';
   }
+  const ME_PW_HASH='03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4';
+  async function sha256hex(t){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}
+  function meUnlocked(){try{return localStorage.getItem('meUnlock')===ME_PW_HASH;}catch(_){return meOpen;}}
+  let meOpen=false;
+  function meApplyLock(){const ok=meOpen||meUnlocked();$('meLock').hidden=ok;$('meBody').hidden=!ok;if(!ok)setTimeout(()=>{if(!$('tabMe').hidden)$('mePw').focus();},0);}
+  $('meLock').addEventListener('submit',async ev=>{ev.preventDefault();const h=await sha256hex($('mePw').value);
+    if(h===ME_PW_HASH){meOpen=true;try{localStorage.setItem('meUnlock',h);}catch(_){}$('mePw').value='';$('mePwMsg').textContent='このタブはパスワードで保護されています。';meApplyLock();}
+    else{$('mePwMsg').textContent='パスワードが違います。';$('mePw').select();}});
+  $('meLockBtn').addEventListener('click',()=>{meOpen=false;try{localStorage.removeItem('meUnlock');}catch(_){}meApplyLock();});
+  meApplyLock();
+  $('meList').addEventListener('change',async ev=>{
+    const el=ev.target.closest('input.rbin');if(!el||readOnly)return;
+    const d=state.st.days.find(x=>x.id===el.dataset.id);if(!d)return;
+    const raw=el.value.trim();
+    if(raw===''){delete d.rb;}else{const v=Math.round(Number(raw));if(!Number.isFinite(v)){el.value=d.rb??'';return;}d.rb=v;}
+    render();await persist();
+  });
+
   $('stForm').addEventListener('submit',async ev=>{
     ev.preventDefault();if(readOnly)return;
     const f=stReadForm();if(!f.date)return;
